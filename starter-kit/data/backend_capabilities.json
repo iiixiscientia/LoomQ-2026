@@ -1,0 +1,65 @@
+{
+  "_comment": "starter-kit/backend_capabilities.md 的机读版——starter-kit 里只给了表格没给 JSON（可能是发布包漏了，也可能是故意留给选手自己转录），这份是照着那张表逐字转录的，数值/账号要求都跟 .md 一致。L2 Agent 的智能选后端工具直接加载这份，不靠 LLM 记忆背答案。",
+  "version": "2026-07",
+  "source": "starter-kit/backend_capabilities.md",
+  "backends": [
+    {
+      "id": "spinq_taurus_simulator",
+      "name": "量旋 SpinQit Taurus 本地模拟器",
+      "kind": "simulator",
+      "max_qubits": 24,
+      "queue": "none",
+      "cost": "free",
+      "account_required": false
+    },
+    {
+      "id": "spinq_cloud_qpu",
+      "name": "量旋云真机（超导／核磁，2-8比特）",
+      "kind": "qpu",
+      "max_qubits": 8,
+      "queue": "minutes_to_hours",
+      "cost": "free_tier",
+      "account_required": true,
+      "account_notes": "需注册（SSH 公钥认证）"
+    },
+    {
+      "id": "originq_local_simulator",
+      "name": "本源 pyqpanda 本地模拟器（CPUQVM）",
+      "kind": "simulator",
+      "max_qubits": 30,
+      "queue": "none",
+      "cost": "free",
+      "account_required": false
+    },
+    {
+      "id": "originq_wukong",
+      "name": "本源悟空超导真机（悟空芯 72 比特）",
+      "kind": "qpu",
+      "max_qubits": 72,
+      "queue": "hours",
+      "cost": "free_tier",
+      "account_required": true,
+      "account_notes": "需注册 + API Token"
+    },
+    {
+      "id": "braket_local_simulator",
+      "name": "AWS Braket LocalSimulator",
+      "kind": "simulator",
+      "max_qubits": 25,
+      "queue": "none",
+      "cost": "free",
+      "account_required": false
+    },
+    {
+      "id": "braket_cloud",
+      "name": "AWS Braket 云端（SV1／各厂商 QPU）",
+      "kind": "cloud_simulator_or_qpu",
+      "max_qubits": 34,
+      "queue": "minutes_to_hours",
+      "cost": "paid",
+      "cost_notes": "按任务 + shots 计费",
+      "account_required": true,
+      "account_notes": "需 AWS 账号"
+    }
+  ]
+}

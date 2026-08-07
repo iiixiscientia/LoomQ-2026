@@ -1,0 +1,17 @@
+{
+  "backend": "spinq_gemini_vp",
+  "job_id": "G-260730-0006",
+  "shots": 1000,
+  "counts": {
+    "00": 36,
+    "11": 160,
+    "10": 769,
+    "01": 35
+  },
+  "bit_order": "little",
+  "timestamp": "2026-07-30T08:37:41Z",
+  "meta": {
+    "platform": "gemini_vp",
+    "source_file": "circuits/coverage/swap_basic.qasm"
+  }
+}

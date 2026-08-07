@@ -5,3 +5,15 @@
 **/.DStore
 __pycache__/
 *.py[cod]
+*.egg-info/
+.env
+
+# 虚拟环境不进仓库
+venv/
+starter-kit/venv/
+starter-kit/spinq_env/
+starter-kit/spinq_runner.py
+
+# 评测输出
+report.json
+starter-kit/report.json

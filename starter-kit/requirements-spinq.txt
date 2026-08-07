@@ -1,0 +1,5 @@
+# 只给 spinq_env/ 这个独立虚拟环境用——跟主 requirements.txt 分开，
+# 因为 antlr4-python3-runtime 的版本要求跟 amazon-braket-default-simulator
+# 互斥（见 src/backends/spinq_backend.py 顶部注释）。
+spinqit==0.2.4
+antlr4-python3-runtime==4.9.2

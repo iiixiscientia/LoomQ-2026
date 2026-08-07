@@ -1,5 +1,9 @@
-# Public evaluator baseline: no third-party dependencies.
-# Add project dependencies below and pin every version exactly, for example:
-# amazon-braket-sdk==<tested-version>
-# spinqit==<tested-version>
-# pyqpanda==<tested-version>
+# 精确锁定版本（可复现性要求）。从仓库根目录的 venv/（不是 submission/venv，
+# 那个只装了 spinqit，是历史遗留）用 `pip freeze` 回填的实际安装版本。
+pyqpanda==3.8.5
+amazon-braket-sdk==1.110.1
+antlr4-python3-runtime==4.13.2
+
+# L2 智能体：不需要额外依赖。starter-kit/llm_client.py 只用标准库 urllib，
+# 走 OpenAI-compatible chat completions 协议直连 LOOMQ_LLM_BASE_URL，正式
+# 评测锁定 DeepSeek deepseek-v4-flash，不再需要装 anthropic 或 openai SDK。

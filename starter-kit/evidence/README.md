@@ -8,7 +8,7 @@
 
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
-- [ ] L1 真机
+- [x] L1 真机
 - [ ] L2 交互体验
 - [ ] 工程与产品化
 - [ ] 自定义量子 RISC-V Bonus
@@ -18,15 +18,24 @@
 
 每个有效真机平台计 5 分，最多两个平台。模拟器不计真机分。每个平台复制并填写一次下面的信息：
 
+目前只有量旋一个平台的真机证据是完整的——本源悟空（originq_wukong）代码和
+token 认证都已就绪，但一直卡在平台侧 "under maintenance"，不是代码问题，
+恢复后会补第二个平台。
+
 ```text
-平台名称：[填写]
-平台 job ID：[填写]
-运行时间：[填写，带时区]
-shots：[填写]
-实际执行的 QASM：[填写仓库内路径]
-平台返回的原始结果：[填写仓库内路径]
-任务页截图：[选填，填写仓库内路径]
+平台名称：量旋云真机（spinq_gemini_vp，2 比特）
+平台 job ID：G-260730-0005
+运行时间：2026-07-30 08:35:50 UTC
+shots：1000
+实际执行的 QASM：starter-kit/circuits/bell.qasm
+平台返回的原始结果：starter-kit/real_hardware/results/spinq_bell_gemini.json
+任务页截图：（暂无，可补）
 ```
+
+另有一份用非对称电路（`circuits/coverage/swap_basic.qasm`）跑的真机结果，
+job ID `G-260730-0006`（`real_hardware/results/spinq_swap_basic.json`），
+是当初用来测出"spinq 真机 counts 位序需要反转"这个 bug 用的，不是重复的
+平台分——只申报一个平台分，这份留作交叉验证材料。
 
 建议把文件放进 `evidence/files/`，比如：
 

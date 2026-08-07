@@ -1,136 +1,142 @@
-# LoomQ Starter Kit v1.1.0
+# LoomQ 提交（starter-kit/）
 
-本工具包定义参赛提交协议，并提供公开自测。它不包含正式评分器、隐藏答案、Mock 得分路径或任何 Level 的参考解答。
+这是我们队伍的正式提交。2026-08-01 题面定稿后，官方把 `starter-kit/` 定为
+**构建与评测根目录**——这个目录本身就是提交内容，不再是"仓库根目录随便放一
+个 submission/ 文件夹"那种结构。
 
-## 提交结构
+## 目录结构
 
 ```text
 starter-kit/
-├── VERSION
-├── CHANGELOG.md
-├── submission.yaml
-├── adapter.py
-├── llm_client.py
-├── l2_policy.json
-├── evaluator.py
-├── prepare_submission.py
-├── riscv_emulator.py
-├── backend_capabilities.md
-├── backend_capabilities.json
-├── QUANTUM_101.md
-├── gate_identities.md
-├── target_ir_contract.md
-├── requirements.txt
-├── Dockerfile
-├── evidence/
-│   ├── README.md
-│   └── files/                # 可选附件
+├── adapter.py                # 提交契约入口：transpile() / run() / agent_chat() / compile_hybrid()
+├── submission.yaml            # 声明参赛 Level、运行时、L2 环境变量协议
+├── evaluator.py                 # 官方公开自测器（未改动，改了也不算数）
+├── riscv_emulator.py             # L3 用的 RISC-V 模拟器（官方提供，未改动）
+├── llm_client.py                  # 官方提供的 L2 传输层（无第三方依赖，未改动）
+├── l2_policy.json                  # 官方机读版 L2 调用预算规则（未改动）
+├── prepare_submission.py            # 官方本地提交预检脚本（未改动）
+├── backend_capabilities.json/.md      # 官方后端能力表（L2 选后端唯一基准，未改动）
+├── requirements.txt                    # 主环境依赖，精确锁版本
+├── requirements-spinq.txt               # spinq_env/ 专用依赖（跟主环境 antlr4 版本互斥）
+├── spinq_runner.py                       # 在 spinq_env/ 里跑的独立脚本，被 subprocess 调用
+├── Dockerfile                             # 官方基线容器 + 建 spinq_env 的步骤
+├── evidence/README.md                      # 人工评分项申报入口（真机/L2交互/工程叙事/Bonus）
+├── real_hardware/                           # 真机接入证据脚本
+│   ├── run_originq_real.py / run_spinq_real.py / verify_result.py
+│   └── results/                               # 跑出来的 result.json
+├── src/
+│   ├── ir.py / qasm_parser.py / codegen.py / reference_simulator.py / utils.py
+│   ├── backends/                                # spinq/braket/originq 执行封装
+│   └── agent/                                    # L2 Agent（agent.py / tools.py / system_prompt.py）
 ├── circuits/
-│   ├── bell.qasm
-│   └── ghz3.qasm
-└── examples/
+│   ├── bell.qasm / ghz3.qasm                       # 官方公开测试电路
+│   └── coverage/                                     # 12 门白名单覆盖测试电路（自己写的）
+└── tests/
+    ├── smoke_test.py / gate_coverage_test.py / originq_ir_roundtrip_test.py
+    └── agent_smoke_test.py / agent_stress_test.py       # L2 自测
 ```
 
-在正式 fork 中，本 `starter-kit/` 目录就是构建与评测根目录，必须保留并填写 `submission.yaml`，同时提供 `adapter.py`。非 Python 项目可以在 `adapter.py` 中通过 `subprocess` 调用自己的 CLI 或二进制。
-
-## 环境
-
-公开 evaluator 只使用 Python 标准库，无需安装依赖。推荐 Python 3.10，与官方基础镜像一致（spinqit 最高只提供 cp310 wheel）：
+## 快速开始
 
 ```bash
-python3 evaluator.py --level l1 --target spinq,originq --json-out report.json
+# 0. parser + codegen 逻辑自测（不需要任何 SDK）
+python3 tests/smoke_test.py
+
+# 1. 主环境装好 braket + originq 之后，跑官方公开自测
+python3 evaluator.py --target originq,braket
+
+# 2. 另外建好 spinq_env/（见下）之后，三个平台都测
+python3 evaluator.py --target spinq,originq,braket
+
+# 3. 12 门白名单覆盖测试（自己写的，比官方公开集更细）
+python3 tests/gate_coverage_test.py
 ```
 
-参赛项目使用第三方 SDK 时，必须把依赖写入 `requirements.txt` 并精确锁定版本，例如 `package==1.2.3`。不要提交 `package>=1.2`，正式评测不会替参赛队选择依赖版本。
+## 为什么 spinq 要单独一个 venv
 
-也可以先验证基础容器：
+`spinqit` 需要 `antlr4-python3-runtime==4.9.2`（旧的 ATN 序列化格式），而
+`amazon-braket-default-simulator` 强制要求 `4.13.2`——这两个版本互斥，同一个
+环境装不全（实测验证过：装哪个版本就是另一个报错）。解决办法是给 spinqit
+单独建一个虚拟环境，`src/backends/spinq_backend.py` 通过 `subprocess` 调用
+`spinq_env/` 里的 `spinq_runner.py`，用 stdin/stdout 传 JSON——跟契约里"非
+Python 技术栈可以用 subprocess 调用自己的 CLI"是同一个思路，只是这里用来
+解决 Python 内部的依赖冲突。
 
 ```bash
-docker build -t loomq-submission .
-docker run --rm loomq-submission
+python3.10 -m venv spinq_env
+spinq_env/bin/pip install -r requirements-spinq.txt
 ```
 
-## Adapter 契约
+## L2 智能体
 
-L1 必须实现：
-
-```python
-def transpile(qasm_str: str, target: str) -> str: ...
-def run(qasm_str: str, target: str, shots: int) -> dict: ...
-```
-
-`transpile()` 的三个目标格式不是任意字符串，规范子集见 `target_ir_contract.md`。正式评测会由组织方解析并模拟返回的目标 IR。
-
-L2、L3 为可选接口：
-
-```python
-def agent_chat(prompt: str) -> str: ...
-def compile_hybrid(hybrid_qasm_str: str) -> tuple[list, str]: ...
-```
-
-未参赛的 Level 保持 `NotImplementedError`，并在 `submission.yaml` 中标为 `false`。Starter Kit 原样运行会失败，这是预期行为，也确保原样提交不会获得功能分。
-
-## 公开自测
+正式评分把 L2 客观测试的模型锁定为 DeepSeek `deepseek-v4-flash`，协议是
+`openai_chat_completions`，配置**只从环境变量读取**，不能硬编码：
 
 ```bash
-# 默认只测试 submission.yaml 中声明为 true 的 Level
-python3 evaluator.py --json-out report.json
-
-# 单独测试
-python3 evaluator.py --level l1 --target spinq,originq,braket
-python3 evaluator.py --level l2
-python3 evaluator.py --level l3
+export LOOMQ_LLM_BASE_URL="https://api.deepseek.com"   # 本地调试用自己的 key；正式评测由组委会注入
+export LOOMQ_LLM_API_KEY="<your-deepseek-key>"
+export LOOMQ_LLM_MODEL="deepseek-v4-flash"
+python3 tests/agent_smoke_test.py     # 照题面三个判定示例自测
+python3 tests/agent_stress_test.py    # 自己设计的变体压力测试（换措辞/换约束/边界 case）
 ```
 
-退出码：全部公开测试通过为 `0`，存在失败为 `1`。`report.json` 只表示公开契约自测结果，不是正式分数。
+**架构**：`adapter.agent_chat(prompt)` → `src/agent/agent.py`，走标准 OpenAI
+function calling 循环。两个工具（`src/agent/tools.py`）：
+- `run_circuit`：本地精确态矢量模拟器，跟 L1 是同一份 `qasm_parser.py` +
+  `reference_simulator.py`，纯 Python 无网络依赖，不占用模型调用预算。
+- `find_backends`：对官方 `backend_capabilities.json` 做精确条件过滤——
+  压力测试实测发现，让 LLM 自己心算"6 条记录同时满足 3 条约束"不够稳（换个
+  问法就会漏看/错看），于是把过滤逻辑写成确定性 Python 代码，LLM 只需要把
+  自然语言约束翻译成参数。
 
-正式评测由组织方在隔离环境运行：每个 case 使用独立进程、私有随机种子和私有期望值；提交进程不会获得理想分布文件。组织方还会分别验证目标原生 IR、真机证据、架构与交互体验。
+**预算硬约束**（`l2_policy.json`）：每个 case 最多 3 次模型调用、累计 8000
+输入 / 2000 输出 token、120 秒超时。这直接决定了两个设计：
+1. `src/agent/system_prompt.py` 刻意精简——system prompt 每次调用都要重发，
+   3 次调用等于至少发送 3 遍，砍掉了所有非必要解释，后端能力表也不再整段
+   塞进 prompt（`find_backends` 直接读官方 json，不需要在 prompt 里重复）。
+2. 硬性格式规则（"最终回复必须重新贴出完整 ```qasm 代码块"）不是 100% 靠
+   模型自觉遵守——`agent.py` 的 `_ensure_qasm_block()` 做了预算感知的兜底：
+   调用预算还有剩余就礼貌地再问一次，预算打满就把本轮验证过的电路确定性地
+   追加进最终文本，不再赌"这次模型听不听话"。
 
-## 最终提交
+⚠️ **一个已经修过的真实 bug**：早期实现自己转录了一份后端能力数据，字段名
+（`account_required`/`free_tier`/`cloud_simulator_or_qpu`）跟官方
+`backend_capabilities.json`（`requires_account`/`free_quota`/`cloud`）不
+一致——两份数据长得像但没对照过。现在 `find_backends` 直接读官方文件，不再
+自己维护副本。
 
-截止时间为 **2026-08-25 12:00 UTC+8**。先在 fork 根目录运行：
+## 真机接入证据
 
 ```bash
-python3 starter-kit/prepare_submission.py --team-id <GITHUB_USERNAME>
+export ORIGINQ_API_TOKEN="..."          # https://qcloud.originqc.com.cn/ 工作台获取
+python3 real_hardware/run_originq_real.py circuits/bell.qasm --shots 1000 \
+    --out real_hardware/results/originq_bell.json
+
+export SPINQ_CLOUD_USERNAME="..."       # https://cloud.spinq.cn 注册，SSH 公钥认证
+export SPINQ_CLOUD_KEYFILE="/path/to/.ssh/id_rsa"
+spinq_env/bin/python3 real_hardware/run_spinq_real.py circuits/bell.qasm --shots 1000 \
+    --platform gemini_vp \
+    --out real_hardware/results/spinq_bell.json
+
+python3 real_hardware/verify_result.py real_hardware/results/*.json
 ```
 
-当前不使用预登记队伍名单。每队指定一个 GitHub 提交账号，该账号的用户名就是 Team ID；fork 必须归该账号所有，并由同一账号创建最终提交 Issue。其他成员仍可作为协作者参与开发。预检通过后，在上游 `QAIDAO/LoomQ-2026` 的“LoomQ 最终提交” Issue Form 中填写输出的 fork 地址和 40 位 commit SHA。出现 `submission:accepted` 标签与归档哈希回执后才算提交成功。更新代码后必须新建 Issue，截止前最后一次有效提交生效。
+跟 `adapter.run()` 是两条独立路径——L1 正式评测默认禁止网络，`run()` 必须
+离线可跑；真机证据是单独提交给评委核对 `job_id` 的文件。申报真机人工分要
+填 `evidence/README.md`。
 
-如申报 L1 真机、L2 交互体验、工程与产品化或 Bonus，只需填写 [`evidence/README.md`](evidence/README.md)。截图、原始结果或图表可以统一放入 `evidence/files/`。证据必须随最终 commit 归档；未提交某项证据只影响对应人工分，不影响自动评分。
+**已实测确认的坑**：spinq 云端不接受电路里显式的 measure 门（脚本自动去
+掉）；spinq 本地/真机 counts 位序跟大赛约定相反，脚本已加 `key[::-1]`
+反转，originq 本地模拟器不需要反转；spinq 的 `job_id` 从 SDK 打印文字里
+正则截获；真机偶发"忙/维护中"不是代码问题，换平台或重试即可。
 
-## L2 统一模型与环境变量
-
-正式 L2 客观评测统一使用 DeepSeek `deepseek-v4-flash`，最终答案仍由确定性的官方测试判定，不使用 LLM 充当裁判。组委会在赛前**不提供 API 地址、API Key、代理或调用额度**。选手本地可使用自己的 DeepSeek API，也可使用其他 OpenAI-compatible 服务调试；组委会只保证正式 DeepSeek 环境下的结果。
-
-`agent_chat(prompt: str) -> str` 接口不变。实现不得硬编码 URL、Key 或模型名，必须读取：
-
-| 环境变量 | 含义 |
-|---|---|
-| `LOOMQ_LLM_BASE_URL` | OpenAI-compatible API 根地址 |
-| `LOOMQ_LLM_API_KEY` | 当前运行凭证 |
-| `LOOMQ_LLM_MODEL` | 当前模型；正式评测为 `deepseek-v4-flash` |
-| `LOOMQ_LLM_TIMEOUT_SECONDS` | 单次请求超时 |
-| `LOOMQ_LLM_MAX_CALLS` | 当前 case 最多调用次数 |
-| `LOOMQ_LLM_MAX_INPUT_TOKENS` | 当前 case 累计输入 Token 上限 |
-| `LOOMQ_LLM_MAX_OUTPUT_TOKENS` | 当前 case 累计输出 Token 上限 |
-
-正式限制为每个 case 最多 3 次调用、8,000 输入 Token、2,000 输出 Token 和 120 秒；两组固定私有种子共 12 个 case，因此每队理论上限为 36 次调用、96,000 输入 Token 和 24,000 输出 Token。机器可读版本见 `l2_policy.json`。
-
-`llm_client.py` 是可选的无依赖传输示例，不包含 Prompt、Agent 策略或参考答案。使用自己的 DeepSeek Key 调试时可设置：
+## 最终提交流程
 
 ```bash
-export LOOMQ_LLM_BASE_URL=https://api.deepseek.com
-export LOOMQ_LLM_API_KEY=<YOUR_OWN_KEY>
-export LOOMQ_LLM_MODEL=deepseek-v4-flash
-export LOOMQ_LLM_TIMEOUT_SECONDS=120
-export LOOMQ_LLM_MAX_CALLS=3
-export LOOMQ_LLM_MAX_INPUT_TOKENS=8000
-export LOOMQ_LLM_MAX_OUTPUT_TOKENS=2000
-python3 evaluator.py --level l2
+python3 prepare_submission.py --team-id <你的 GitHub 用户名>
 ```
 
-缺少配置时应立即失败，错误信息不得包含任何 Key。正式评测时，组委会将统一注入 DeepSeek 模型服务及调用预算；评测环境不保证能够访问其他外部网络服务。若参加 L2，请把 `submission.yaml` 中的 `levels.l2` 与 `network.required_for_l2` 同时改为 `true`；`allowed_hosts` 不用于申请正式评测中的任意公网访问。
-
-## 版本政策
-
-合同版本为 `1.0`。开赛后，`1.x` 只允许增加向后兼容的文档、诊断信息和公开测试，不改变已有接口语义；破坏性修改必须发布新的合同版本并为旧版保留评测通道。
+通过后按输出提示，在 `QAIDAO/LoomQ-2026` 开"LoomQ 最终提交" Issue，填 fork
+地址和 40 位 commit SHA。截止时间 **2026-08-25 12:00 UTC+8**，以 Issue 创建
+时间为准，不是 commit 时间；更新代码后要重新开 Issue，截止前最后一次通过
+校验的提交生效。
