@@ -85,7 +85,12 @@ def agent_chat(prompt: str) -> str:
 
 
 def compile_hybrid(hybrid_qasm_str: str) -> Tuple[List[str], str]:
-    """[L3 可选] 混合编译接口。"""
-    raise NotImplementedError(
-        "L3 是可选项：实现后把 submission.yaml 里的 l3 改成 true 再参赛"
-    )
+    """[L3] 混合编译接口。
+
+    实现在 src/hybrid_compiler.py：先按花括号配对把 `classical {...}` 块从
+    源码里切出来（块外的所有非声明行按原始顺序作为量子操作序列返回)，再对
+    块内文本做 tokenize -> 递归下降解析 -> 生成 RISC-V 汇编（寄存器映射、
+    临时寄存器清零策略见该文件顶部的说明）。
+    """
+    from src.hybrid_compiler import compile_hybrid_qasm as _compile_hybrid_qasm
+    return _compile_hybrid_qasm(hybrid_qasm_str)
