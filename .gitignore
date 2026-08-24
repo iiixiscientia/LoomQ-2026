@@ -17,3 +17,4 @@ starter-kit/spinq_runner.py
 # 评测输出
 report.json
 starter-kit/report.json
+.nfs.*
