@@ -34,124 +34,228 @@ INDEX_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>LoomQ — 量子接入平权计划</title>
+<title>LoomQ // 量子科普</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#f8f9fa;--card:#fff;--border:#e2e8f0;--text:#1a202c;--muted:#64748b;
---accent:#2563eb;--accent-light:#dbeafe;--accent-dark:#1d4ed8;--success:#059669;
---code-bg:#f1f5f9;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.08)}
+:root{
+  --page:#e7e1d2;--panel:#111213;--ink:#2b2822;--paper:#f4efe4;
+  --muted:#8b8676;--muted-dark:#9a988c;
+  --blue:#3d6ea5;--tan:#d1a34a;--gray:#9aa0a6;--red:#c8493c;--purple:#7a5aa8;
+  --danger:#c8493c;--code-bg:#1b1c1e;
+  --mono:ui-monospace,"SF Mono",Consolas,"Courier New",monospace
+}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
-.container{max-width:800px;margin:0 auto;width:100%;padding:0 1rem;flex:1;display:flex;flex-direction:column}
+background:var(--page);color:var(--ink);line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+.container{max-width:760px;margin:0 auto;width:100%;padding:0 1rem;flex:1;display:flex;flex-direction:column}
 
 /* Header */
 .header{text-align:center;padding:2rem 0 1rem}
-.header h1{font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
-.header h1 span{color:var(--accent)}
-.header p{color:var(--muted);font-size:.9rem;margin-top:.25rem}
+.tag{display:inline-block;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+background:var(--tan);color:#2a2210;padding:3px 12px;border-radius:999px;margin-bottom:.7rem;
+text-transform:uppercase;font-weight:700}
+.header h1{font-size:1.45rem;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.header h1 span{color:var(--blue)}
+.header p{color:var(--muted);font-size:.85rem;margin-top:.35rem}
 
-/* Welcome */
+/* generic instrument panel */
+.panel{background:var(--panel);color:var(--paper);border-radius:16px;
+padding:1.1rem 1.25rem;box-shadow:0 6px 16px rgba(43,40,34,.12)}
+
+/* Storybook */
+.story-hidden{display:none!important}
+.storybook{text-align:center;padding:.5rem 0 2rem}
+.story-visual{display:flex;align-items:center;justify-content:center;min-height:170px;margin-bottom:.9rem}
+.story-panel{max-width:440px;margin:0 auto}
+.story-panel .cn{font-size:.95rem;line-height:1.75}
+.story-panel .cn b{color:var(--tan)}
+.story-nav{display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.1rem}
+.dots{display:flex;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:#c9c2ae}
+.dot.active{background:var(--blue);width:16px;border-radius:4px}
+.skip-link{display:block;margin:.8rem auto 0;font-size:.75rem;color:var(--muted);
+text-decoration:underline;cursor:pointer;background:none;border:none}
+
+/* Welcome (stage 3 cards) */
 .welcome{margin-bottom:1.5rem}
-.welcome h2{font-size:1.1rem;font-weight:500;margin-bottom:.75rem}
+.welcome h2{font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--ink)}
 .cards{display:grid;grid-template-columns:1fr;gap:.75rem}
 @media(min-width:540px){.cards{grid-template-columns:repeat(3,1fr)}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-padding:1rem;cursor:pointer;transition:border-color .15s,box-shadow .15s}
-.card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
-.card .icon{font-size:1.5rem;margin-bottom:.5rem}
-.card h3{font-size:.85rem;font-weight:600;margin-bottom:.25rem}
-.card p{font-size:.78rem;color:var(--muted);line-height:1.4}
+.card{background:var(--panel);color:var(--paper);border-radius:12px;
+padding:1rem;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(43,40,34,.18)}
+.card .icon{width:26px;height:26px;border-radius:7px;margin-bottom:.6rem;
+display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;color:#1a1a1a}
+.card:nth-child(1) .icon{background:var(--blue);color:#fff}
+.card:nth-child(2) .icon{background:var(--tan)}
+.card:nth-child(3) .icon{background:var(--red);color:#fff}
+.card h3{font-size:.78rem;font-weight:700;margin-bottom:.3rem;color:var(--paper);
+font-family:var(--mono);letter-spacing:.05em}
+.card p{font-size:.78rem;color:var(--muted-dark);line-height:1.45}
 
 /* Chat */
 .chat-area{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:1rem}
 .messages{flex:1;overflow-y:auto;padding:.5rem 0;display:flex;flex-direction:column;gap:.75rem}
-.msg{max-width:90%;padding:.75rem 1rem;border-radius:var(--radius);font-size:.9rem;word-break:break-word}
-.msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
-.msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
-.msg.bot .thinking{color:var(--muted);font-style:italic;font-size:.82rem}
+.msg{max-width:90%;padding:.75rem 1rem;font-size:.9rem;word-break:break-word;border-radius:12px}
+.msg.user{align-self:flex-end;background:var(--blue);color:#fff}
+.msg.bot{align-self:flex-start;background:var(--panel);color:var(--paper)}
+.msg.bot .thinking{color:var(--tan);font-style:normal;font-size:.8rem}
 
 /* Code blocks */
 .msg pre{background:var(--code-bg);border-radius:8px;padding:.75rem;margin:.5rem 0;
-overflow-x:auto;font-size:.8rem;font-family:"SF Mono",Monaco,Consolas,monospace;line-height:1.5;white-space:pre-wrap}
+overflow-x:auto;font-size:.78rem;font-family:var(--mono);line-height:1.5;white-space:pre-wrap;color:#bcd6ee}
 
 /* Chart container */
-.chart-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-padding:1rem;margin:.75rem 0}
-.chart-box h4{font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.03em}
+.chart-box{background:var(--panel);color:var(--paper);border-radius:12px;padding:1rem;margin:.75rem 0}
+.chart-box h4{font-size:.7rem;font-weight:600;color:var(--muted-dark);margin-bottom:.5rem;
+text-transform:uppercase;letter-spacing:.08em}
 .chart-box canvas{width:100%!important;height:200px!important}
 
 /* Concept card */
-.concept{background:var(--accent-light);border-radius:var(--radius);padding:.75rem 1rem;
-margin:.5rem 0;font-size:.82rem;line-height:1.5}
-.concept strong{color:var(--accent-dark)}
+.concept{background:#ded5bd;border-left:3px solid var(--blue);border-radius:0 8px 8px 0;
+padding:.75rem 1rem;margin:.5rem 0;font-size:.82rem;line-height:1.5;color:var(--ink)}
+.concept strong{color:var(--blue)}
 
 /* Input */
-.input-area{display:flex;gap:.5rem;padding:.75rem 0;border-top:1px solid var(--border)}
-.input-area input{flex:1;padding:.6rem 1rem;border:1px solid var(--border);border-radius:var(--radius);
-font-size:.9rem;outline:none;transition:border-color .15s}
-.input-area input:focus{border-color:var(--accent)}
-.input-area button{padding:.6rem 1.25rem;background:var(--accent);color:#fff;border:none;
-border-radius:var(--radius);font-size:.9rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s}
-.input-area button:hover{background:var(--accent-dark)}
-.input-area button:disabled{opacity:.5;cursor:not-allowed}
+.input-area{display:flex;gap:.5rem;padding:.75rem 0}
+.input-area input{flex:1;padding:.6rem 1rem;background:var(--panel);border:none;border-radius:10px;
+color:var(--paper);font-size:.9rem;outline:none;box-shadow:0 0 0 2px transparent;transition:box-shadow .15s}
+.input-area input::placeholder{color:var(--muted-dark)}
+.input-area input:focus{box-shadow:0 0 0 2px var(--blue)}
+.input-area button{padding:.6rem 1.3rem;background:var(--tan);color:#2a2210;border:none;border-radius:10px;
+font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.input-area button:hover{opacity:.85}
+.input-area button:disabled{opacity:.35;cursor:not-allowed}
 
 /* Status */
-.status{text-align:center;padding:.5rem;font-size:.78rem;color:var(--muted)}
-.status.error{color:#dc2626}
+.status{text-align:center;padding:.5rem;font-size:.75rem;color:var(--muted)}
+.status.error{color:var(--danger)}
 
 /* Story stages (orb onboarding) */
-.story-hidden{display:none!important}
 .story{text-align:center;padding:1rem 0 2rem}
-.bubble{background:var(--card);border:1px solid var(--border);border-radius:16px;
-padding:.85rem 1.15rem;max-width:480px;margin:0 auto 1.25rem;font-size:.88rem;
-line-height:1.6;box-shadow:var(--shadow)}
-.orb-stage{display:flex;justify-content:center;align-items:center;gap:2.5rem;min-height:150px;margin-bottom:.75rem}
-.orb{width:96px;height:96px;border-radius:50%;cursor:pointer;transition:transform .15s}
+.bubble{background:var(--panel);color:var(--paper);border-radius:14px;
+padding:.9rem 1.15rem;max-width:520px;margin:0 auto 1.1rem;font-size:.88rem;
+line-height:1.7;text-align:left}
+.bubble .eq{display:block;margin-top:.6rem;font-family:var(--mono);font-size:.76rem;color:var(--tan)}
+
+.orb-stage{display:flex;justify-content:center;align-items:center;gap:2.5rem;min-height:150px;
+margin-bottom:.75rem;position:relative}
+.orb{width:92px;height:92px;border-radius:50%;cursor:pointer;transition:transform .15s;position:relative;z-index:2}
 .orb:hover{transform:scale(1.06)}
-.orb.superpos{background:radial-gradient(circle at 34% 30%,#bfdbfe,#3b82f6 45%,#fb923c 100%);
-box-shadow:0 0 28px rgba(59,130,246,.35);animation:orbPulse 2.4s ease-in-out infinite}
-@keyframes orbPulse{0%,100%{filter:hue-rotate(0deg) brightness(1)}50%{filter:hue-rotate(35deg) brightness(1.12)}}
-.orb.collapsed-blue{background:radial-gradient(circle at 34% 30%,#93c5fd,#2563eb);
-box-shadow:0 0 22px rgba(37,99,235,.5);animation:none}
-.orb.collapsed-orange{background:radial-gradient(circle at 34% 30%,#fdba74,#ea580c);
-box-shadow:0 0 22px rgba(234,88,12,.5);animation:none}
+.orb.superpos{background:conic-gradient(from 0deg,#c8493c,#d1a34a,#3d6ea5,#7a5aa8,#c8493c);
+box-shadow:0 6px 16px rgba(43,40,34,.25);animation:orbSpin 4s linear infinite}
+@keyframes orbSpin{0%{filter:brightness(1)}50%{filter:brightness(1.12)}100%{filter:brightness(1)}}
+.orb.collapsed-blue{background:radial-gradient(circle at 34% 30%,#8fb4d9,var(--blue) 60%,#1e3a52 100%);
+box-shadow:0 6px 16px rgba(61,110,165,.35);animation:none}
+.orb.collapsed-red{background:radial-gradient(circle at 34% 30%,#e6a89f,var(--red) 60%,#5c1c15 100%);
+box-shadow:0 6px 16px rgba(200,73,60,.35);animation:none}
 .orb.settling{animation:orbSettle .4s ease-out}
-@keyframes orbSettle{0%{transform:scale(1.35)}55%{transform:scale(.88)}100%{transform:scale(1)}}
-.tally{font-size:.78rem;color:var(--muted);min-height:1.1rem;margin-bottom:.85rem}
-.story-btn{padding:.55rem 1.4rem;border-radius:999px;border:1px solid var(--border);
-background:var(--card);font-size:.85rem;cursor:pointer}
-.story-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-.story-btn:hover{box-shadow:var(--shadow)}
+@keyframes orbSettle{0%{transform:scale(1.4)}55%{transform:scale(.85)}100%{transform:scale(1)}}
+
+.tether{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88px;height:2px;z-index:1;
+background:linear-gradient(90deg,var(--blue),var(--red));opacity:.3;transition:opacity .3s}
+.tether.sync{opacity:1}
+
+.tally{font-size:.75rem;color:var(--muted);min-height:1.1rem;margin-bottom:.85rem}
+.story-btn{padding:.55rem 1.4rem;border:none;background:var(--panel);color:var(--paper);
+border-radius:999px;font-size:.8rem;cursor:pointer}
+.story-btn.primary{background:var(--tan);color:#2a2210;font-weight:700}
+.story-btn:hover{opacity:.88}
+
+/* Story icon widgets (bb-quantum-info picture-book beats) */
+.ball{width:84px;height:84px;border-radius:50%}
+.ball-red{background:var(--red)}
+.ball-split{background:linear-gradient(90deg,var(--red) 50%,var(--blue) 50%)}
+.ball-row{display:flex;gap:16px}
+.ball-row .ball{width:70px;height:70px}
+.e-plain{width:88px;height:88px;border-radius:50%;border:3px solid var(--paper);
+display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:var(--paper)}
+.e-rainbow{width:88px;height:88px;border-radius:50%;
+background:conic-gradient(from 0deg,#c8493c,#d1a34a,#3d6ea5,#7a5aa8,#c8493c);
+display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#fff;
+text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.phone{width:62px;height:100px;border:3px solid var(--paper);border-radius:10px;position:relative;
+display:flex;align-items:center;justify-content:center;padding:6px}
+.phone::after{content:'';position:absolute;bottom:6px;width:8px;height:8px;border-radius:50%;
+border:2px solid var(--paper)}
+.dotgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;width:100%}
+.dotgrid .mini{width:8px;height:8px;border-radius:50%}
+.mini.blue{background:var(--blue)}.mini.red{background:var(--red)}
+.mini.rainbow{background:conic-gradient(from 0deg,#c8493c,#d1a34a,#3d6ea5,#7a5aa8,#c8493c)}
+.scale-col{display:flex;flex-direction:column;gap:.55rem}
+.scale-row{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.72rem;color:var(--muted-dark)}
+.scale-row .cluster{display:grid;gap:2px}
+.scale-row .cluster.n2{grid-template-columns:repeat(2,1fr)}
+.scale-row .cluster.n4{grid-template-columns:repeat(2,1fr)}
+.scale-row .cluster.n16{grid-template-columns:repeat(4,1fr)}
+.scale-row .cluster .mini{width:9px;height:9px}
+.scale-row .label{min-width:70px;text-align:left;color:var(--paper);font-weight:600}
+.phone-row{display:flex;align-items:flex-end;justify-content:center;gap:1.4rem}
+.phone-group{text-align:center}
+.phone-cluster{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:70px;margin-bottom:.4rem}
+.phone-cluster .phone{width:26px;height:42px;border-width:2px}
+.phone-cluster .phone::after{display:none}
+.glabel{font-size:.7rem;color:var(--muted-dark);font-weight:600}
+.globe-wrap{position:relative;width:180px;height:180px;margin:0 auto}
+.globe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;
+border-radius:50%;background:radial-gradient(circle at 35% 30%,#6fa77f,#2f6b8a 65%,#1c4560)}
+.globe-phone{position:absolute;top:50%;left:50%;width:13px;height:22px;border:2px solid var(--paper);
+border-radius:3px;margin:-11px 0 0 -6.5px}
+.bulb{width:56px;height:56px;border-radius:50%;border:3px solid var(--paper);position:relative}
+.bulb.on{background:var(--tan);border-color:var(--tan);box-shadow:0 0 22px rgba(209,163,74,.55)}
+.bulb::after{content:'';position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);
+width:18px;height:9px;border:2px solid var(--paper);border-top:none;border-radius:0 0 4px 4px}
+.molecule line{stroke:var(--paper);stroke-width:1.4;opacity:.55}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1><span>LoomQ</span> 量子助手</h1>
-    <p>不需要任何物理背景，从一颗小球开始</p>
+    <span class="tag">LoomQ · 量子科普</span>
+    <h1><span>LoomQ</span> 从一个小球开始</h1>
   </div>
 
-  <!-- 第一幕：单颗小球，叠加与测量 -->
-  <div class="story" id="storyStage1">
-    <div class="bubble" id="s1Caption">轻触下面这颗小球，看看它在想什么。</div>
+  <!-- 绘本铺垫：改编自 Chris Ferrie《Quantum Information for Babies》的叙事节奏 -->
+  <div class="storybook" id="storybook">
+    <div class="panel story-panel">
+      <div class="story-visual" id="storyVisual"></div>
+      <div class="cn" id="storyCn"></div>
+    </div>
+    <div class="story-nav">
+      <button class="story-btn" id="prevBtn" onclick="storyPrev()">‹ 上一页</button>
+      <div class="dots" id="storyDots"></div>
+      <button class="story-btn primary" id="nextBtn" onclick="storyNext()">下一页 ›</button>
+    </div>
+    <button class="skip-link" onclick="skipStory()">跳过铺垫，直接开始实验 »</button>
+  </div>
+
+  <!-- 第一幕：单个球，叠加与测量 -->
+  <div class="story story-hidden" id="storyStage1">
+    <div class="bubble">
+      <span id="s1Caption">轻触下面这颗球，看看它选了什么颜色。</span>
+      <span class="eq" id="s1Eq"></span>
+    </div>
     <div class="orb-stage"><div class="orb superpos" id="orb1" onclick="clickOrb1()"></div></div>
     <div class="tally" id="s1Tally"></div>
     <div id="s1Next" class="story-hidden">
-      <button class="story-btn primary" onclick="goStage2()">下一步：两颗球的秘密 →</button>
+      <button class="story-btn primary" onclick="goStage2()">下一步：两颗球的秘密 ›</button>
     </div>
   </div>
 
-  <!-- 第二幕：两颗小球，纠缠 -->
+  <!-- 第二幕：两个球，纠缠 -->
   <div class="story story-hidden" id="storyStage2">
-    <div class="bubble" id="s2Caption">如果两颗小球被"绑"在一起，会发生什么？轻触它们试试。</div>
+    <div class="bubble">
+      <span id="s2Caption">如果两颗球被"绑"在一起会怎样？触发它们试试。</span>
+      <span class="eq" id="s2Eq"></span>
+    </div>
     <div class="orb-stage">
+      <div class="tether" id="tether"></div>
       <div class="orb superpos" id="orbA" onclick="clickOrbPair()"></div>
       <div class="orb superpos" id="orbB" onclick="clickOrbPair()"></div>
     </div>
     <div class="tally" id="s2Tally"></div>
     <div id="s2Next" class="story-hidden">
-      <button class="story-btn primary" onclick="goStage3()">下一步：自己动手做实验 →</button>
+      <button class="story-btn primary" onclick="goStage3()">下一步：自己动手做实验 ›</button>
     </div>
   </div>
 
@@ -160,18 +264,18 @@ background:var(--card);font-size:.85rem;cursor:pointer}
     <h2>现在你已经知道叠加和纠缠是什么了，想自己试试吗？</h2>
     <div class="cards">
       <div class="card" onclick="tryPrompt('帮我生成一个贝尔态电路，我想看两个量子比特纠缠是什么效果')">
-        <div class="icon">🔗</div>
-        <h3>量子纠缠</h3>
+        <div class="icon">E</div>
+        <h3>ENTANGLE</h3>
         <p>生成贝尔态——量子世界最神奇的现象，两个粒子"心灵感应"</p>
       </div>
       <div class="card" onclick="tryPrompt('这段量子代码有错误，帮我修好并解释：H q[0]; CX q[0] q[1];')">
-        <div class="icon">🔧</div>
-        <h3>代码纠错</h3>
+        <div class="icon">D</div>
+        <h3>DEBUG</h3>
         <p>给一段有 bug 的量子代码，AI 自动修复并解释问题在哪</p>
       </div>
       <div class="card" onclick="tryPrompt('我想运行一个 5 比特的量子电路，不想花钱也不想排队，推荐哪个平台？')">
-        <div class="icon">🌐</div>
-        <h3>选平台</h3>
+        <div class="icon">R</div>
+        <h3>ROUTE</h3>
         <p>根据你的需求（比特数、预算、排队时间）智能推荐量子云平台</p>
       </div>
     </div>
@@ -196,12 +300,102 @@ let busy=false,chartCounter=0;
 
 function tryPrompt(text){inputEl.value=text;sendMsg()}
 
-// ── 第一、二幕：小球引导（本地精确模拟器驱动，不占用 LLM 调用预算） ──────────
+// ── 绘本铺垫：改编自 Chris Ferrie《Quantum Information for Babies》 ─────────
+// 只借用其"用小球讲 bit → 用电子讲 qubit → 指数级扩张 → 量子系统模拟量子系统"
+// 的叙事节奏，图标是我们自己重新画的，不复制原书画面。
+function miniDots(n,cls){let s='';for(let i=0;i<n;i++)s+=`<div class="mini ${cls}"></div>`;return s;}
+function ballIcon(cls){return `<div class="ball ${cls}"></div>`}
+function ballPair(){return `<div class="ball-row"><div class="ball ball-split"></div><div class="ball ball-split"></div></div>`}
+function phoneDots(n,cls){return `<div class="phone"><div class="dotgrid">${miniDots(n,cls)}</div></div>`}
+function electronIcon(cls){return `<div class="${cls}">e⁻</div>`}
+function cluster(n,cls){return `<div class="cluster n${n}">${miniDots(n,cls)}</div>`}
+function scaleRows(){
+  return `<div class="scale-col">
+    <div class="scale-row">${cluster(2,'blue')}<span>→</span>${cluster(1,'rainbow')}<span class="label">1 个量子位</span></div>
+    <div class="scale-row">${cluster(4,'blue')}<span>→</span>${cluster(2,'rainbow')}<span class="label">2 个量子位</span></div>
+    <div class="scale-row">${cluster(16,'blue')}<span>→</span>${cluster(4,'rainbow')}<span class="label">4 个量子位</span></div>
+  </div>`;
+}
+function phoneGroup(n,label){
+  let s='';for(let i=0;i<n;i++)s+='<div class="phone"></div>';
+  return `<div class="phone-group"><div class="phone-cluster">${s}</div><div class="glabel">${label}</div></div>`;
+}
+function phoneRow3(){return `<div class="phone-row">${phoneGroup(1,'20 个量子位')}${phoneGroup(2,'21 个量子位')}${phoneGroup(4,'22 个量子位')}</div>`}
+function moleculeSvg(rainbow){
+  const nodes=[[30,88],[54,58],[88,58],[112,88],[88,110],[54,110],[18,52],[146,72],[92,20]];
+  const edges=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[1,6],[3,7],[2,8]];
+  let s='<svg class="molecule" width="170" height="130" viewBox="0 0 170 130">';
+  if(rainbow){
+    s+='<defs><radialGradient id="eBallGrad" cx="35%" cy="30%" r="75%">'
+      +'<stop offset="0%" stop-color="#f4efe4"/>'
+      +'<stop offset="30%" stop-color="#d1a34a"/>'
+      +'<stop offset="55%" stop-color="#3d6ea5"/>'
+      +'<stop offset="80%" stop-color="#7a5aa8"/>'
+      +'<stop offset="100%" stop-color="#c8493c"/></radialGradient></defs>';
+  }
+  edges.forEach(function(e){s+=`<line x1="${nodes[e[0]][0]}" y1="${nodes[e[0]][1]}" x2="${nodes[e[1]][0]}" y2="${nodes[e[1]][1]}"/>`;});
+  // 未量子化：暗淡的实心点（在黑色面板上仍清晰可见，但刻意"平平无奇"）
+  // 量子化：每个原子都是一颗彩色的"电子球"（呼应前面 e-rainbow 的视觉语言）
+  nodes.forEach(function(p){
+    const fill=rainbow?'url(#eBallGrad)':'#f4efe4';
+    const op=rainbow?1:.7;
+    s+=`<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="${fill}" opacity="${op}"/>`;
+  });
+  s+='</svg>';
+  return s;
+}
+function globePhones(){
+  let s='<div class="globe-wrap"><div class="globe"></div>';
+  const n=10,rad=78;
+  for(let i=0;i<n;i++){
+    const a=(360/n)*i;
+    s+=`<div class="globe-phone" style="transform:translate(-50%,-50%) rotate(${a}deg) translate(0,-${rad}px) rotate(${-a}deg)"></div>`;
+  }
+  s+='</div>';
+  return s;
+}
+function bulbIcon(){return `<div class="bulb on"></div>`}
+
+const SLIDES=[
+  {cn:'这是一个球。', visual:function(){return ballIcon('ball-red')}},
+  {cn:'这个球可以是<b>红色</b>的，或者<b>蓝色</b>的。', visual:function(){return ballIcon('ball-split')}},
+  {cn:'记录一个球的颜色需要 <b>1 bit</b> 信息；记录两个球，需要 <b>2 bit</b>。', visual:function(){return ballPair()}},
+  {cn:'电脑和手机能存很多 bit 信息——这部手机能存 <b>100 万 bit</b>。', visual:function(){return phoneDots(20,'blue')}},
+  {cn:'但这是一个电子——一个"<b>量子球</b>"。', visual:function(){return electronIcon('e-plain')}},
+  {cn:'一个电子能存一个<b>量子位（qubit）</b>。它不是简单的红或蓝，而是像彩虹一样，同时包含所有可能。', visual:function(){return electronIcon('e-rainbow')}},
+  {cn:'描述 1 个量子位需要 2 bit；2 个量子位需要 4 bit；4 个量子位，就需要 <b>16 bit</b> 了。', visual:function(){return scaleRows()}},
+  {cn:'还记得能存 100 万 bit 的手机吗？它只够装下 <b>20 个量子位</b>的信息。', visual:function(){return phoneDots(20,'rainbow')}},
+  {cn:'21 个量子位就要 2 部手机，22 个就要 4 部——每多 1 个量子位，需求就<b>翻一倍</b>。', visual:function(){return phoneRow3()}},
+  {cn:'要存下我最喜欢的一个分子的完整量子信息……', visual:function(){return moleculeSvg(false)}},
+  {cn:'得用<b>地球上所有的手机</b>才够！<br><br>你有什么办法可以解决这个问题吗？', visual:function(){return globePhones()}},
+  {cn:'我们可以用<b>量子系统</b>，来存储量子信息！全世界所有手机才能做到的事，单单<b>一个分子</b>就能做到——这就是量子计算真正的力量。', visual:function(){return moleculeSvg(true)}},
+  {cn:'现在，让我们亲手触碰一个量子位，看看"<b>叠加</b>"到底是什么。', visual:function(){return electronIcon('e-rainbow')}, isLast:true}
+];
+let storyIdx=0;
+function renderStory(){
+  const s=SLIDES[storyIdx];
+  document.getElementById('storyVisual').innerHTML=s.visual();
+  document.getElementById('storyCn').innerHTML=s.cn;
+  document.getElementById('prevBtn').style.visibility=storyIdx===0?'hidden':'visible';
+  document.getElementById('nextBtn').textContent=s.isLast?'开始实验 ›':'下一页 ›';
+  document.getElementById('storyDots').innerHTML=SLIDES.map(function(_,i){
+    return `<div class="dot${i===storyIdx?' active':''}"></div>`;
+  }).join('');
+}
+function storyPrev(){ if(storyIdx>0){storyIdx--;renderStory();} }
+function storyNext(){ if(storyIdx<SLIDES.length-1){storyIdx++;renderStory();} else {skipStory();} }
+function skipStory(){
+  document.getElementById('storybook').classList.add('story-hidden');
+  document.getElementById('storyStage1').classList.remove('story-hidden');
+}
+renderStory();
+
+// ── 第一、二幕：交互实验（本地精确模拟器驱动，不占用 LLM 调用预算） ──────────
 const SUPERPOS_QASM='OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\ncreg c[1];\nh q[0];\nmeasure q[0] -> c[0];';
 const BELL_QASM='OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\nh q[0];\ncx q[0],q[1];\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];';
 
 let superposDist=null, bellDist=null;
-let s1Clicks=0, s1Blue=0, s1Orange=0;
+let s1Clicks=0, s1Blue=0, s1Red=0;
 let s2Clicks=0, s2Same=0;
 
 async function fetchDist(qasm, fallback){
@@ -222,47 +416,53 @@ async function clickOrb1(){
   if(!superposDist) superposDist=await fetchDist(SUPERPOS_QASM,{'0':0.5,'1':0.5});
   const outcome=sampleFromDist(superposDist);
   const orb=document.getElementById('orb1');
-  const cls=outcome==='0'?'collapsed-blue':'collapsed-orange';
-  orb.classList.remove('superpos');
+  const cls=outcome==='0'?'collapsed-blue':'collapsed-red';
+  orb.classList.remove('superpos','collapsed-blue','collapsed-red');
   orb.classList.add(cls,'settling');
   setTimeout(()=>orb.classList.remove('settling'),400);
 
-  s1Clicks++; if(outcome==='0') s1Blue++; else s1Orange++;
+  s1Clicks++; if(outcome==='0') s1Blue++; else s1Red++;
+  const pBlue=Math.round(100*s1Blue/s1Clicks), pRed=100-pBlue;
   document.getElementById('s1Tally').textContent=
-    s1Clicks>0 ? `摸了 ${s1Clicks} 次 —— 蓝色 ${s1Blue} 次，橙色 ${s1Orange} 次` : '';
+    `已经触发 ${s1Clicks} 次 — 蓝 ${s1Blue} 次 (${pBlue}%)，红 ${s1Red} 次 (${pRed}%)`;
   const cap=document.getElementById('s1Caption');
+  const eq=document.getElementById('s1Eq');
   if(s1Clicks===1){
-    cap.textContent=(outcome==='0'?'这一次它选择了蓝色！':'这一次它选择了橙色！')+
-      ' 在你碰它之前，它同时是蓝色的可能、也是橙色的可能——这叫"叠加"。你一碰，它才选定一个，这叫"测量"。';
-  } else if(s1Clicks<3){
-    cap.textContent='再摸一次，看看这次它选谁。每次结果都可能不一样。';
+    cap.textContent=(outcome==='0'?'这一次，它变成了蓝色。':'这一次，它变成了红色。')+
+      ' 在你触发它之前，它不是"红"或"蓝"中的一个，而是两者的叠加态——就像刚才绘本里那颗彩虹色的电子。你一测量，它才"坍缩"成一个确定的颜色，这叫"测量"。'+
+      ' 物理学家给这两个结果各起了个"official 昵称"：蓝色叫 |0⟩，红色叫 |1⟩——那对尖括号只是"这是一个量子态"的固定写法，不是什么高深符号，你可以直接当成蓝/红的另一个名字来读。';
+    eq.textContent='|0⟩ = 蓝    |1⟩ = 红    a|0⟩ + b|1⟩ ,  |a|² = |b|² = 0.5';
+  } else if(s1Clicks<4){
+    cap.textContent='再触发一次，看这次变成什么颜色。每次结果都可能不一样——这不是 bug，是真随机。';
   } else {
-    cap.textContent='多摸几次你会发现：大约一半蓝色、一半橙色。这不是运气——这些数字是用真正的量子模拟器算出来的，不是预设的动画。';
+    cap.textContent=`目前蓝 ${pBlue}%、红 ${pRed}%，不一定正好一半一半——次数还不够多。触发的次数越多，比例就会越来越接近 50:50，这是概率统计的规律（"大数定律"），不是巧合。这条日志也不是预设的，是本地精确模拟器实时算出的真实结果。`;
     document.getElementById('s1Next').classList.remove('story-hidden');
   }
-  setTimeout(()=>{ orb.classList.remove('collapsed-blue','collapsed-orange'); orb.classList.add('superpos'); },1300);
 }
 
 async function clickOrbPair(){
   if(!bellDist) bellDist=await fetchDist(BELL_QASM,{'00':0.5,'11':0.5});
   const outcome=sampleFromDist(bellDist);
-  const cls=outcome==='00'?'collapsed-blue':'collapsed-orange';
+  const cls=outcome==='00'?'collapsed-blue':'collapsed-red';
   const a=document.getElementById('orbA'), b=document.getElementById('orbB');
-  [a,b].forEach(o=>{o.classList.remove('superpos');o.classList.add(cls,'settling');});
+  const tether=document.getElementById('tether');
+  tether.classList.add('sync');
+  [a,b].forEach(o=>{o.classList.remove('superpos','collapsed-blue','collapsed-red');o.classList.add(cls,'settling');});
   setTimeout(()=>{a.classList.remove('settling');b.classList.remove('settling');},400);
 
-  s2Clicks++; s2Same++; // 贝尔态理想分布只会出现 00/11，两球必然同色
-  document.getElementById('s2Tally').textContent=`试了 ${s2Clicks} 次 —— ${s2Same} 次两颗球选了同一个颜色`;
+  s2Clicks++; s2Same++; // 贝尔态理想分布只会出现 00/11，两颗球必然同色
+  document.getElementById('s2Tally').textContent=`试了 ${s2Clicks} 次 — 同色 ${s2Same}/${s2Clicks}`;
   const cap=document.getElementById('s2Caption');
+  const eq=document.getElementById('s2Eq');
   if(s2Clicks===1){
-    cap.textContent='看！两颗球选了同一个颜色，不是一蓝一橙。它们之间没有任何连线，却总是心有灵犀——这就是"量子纠缠"，爱因斯坦叫它"鬼魅般的超距作用"。';
+    cap.textContent='两颗球变成了同一个颜色，不是一红一蓝。它们之间没有任何经典连线，结果却总是相关——这就是"量子纠缠"。用刚才学的昵称写就是：要么两颗都是 |0⟩（记作 |00⟩，两颗都蓝），要么两颗都是 |1⟩（记作 |11⟩，两颗都红），从来不会一红一蓝。注意：这不是"瞬间传信号"，单独看任何一颗球，它的颜色依然完全随机；只有把两边的记录放在一起比对，才会发现这种关联。';
+    eq.textContent='|00⟩ = 两颗都蓝    |11⟩ = 两颗都红    (|00⟩ + |11⟩) / √2';
   } else if(s2Clicks<2){
-    cap.textContent='再试一次，看看这次两颗球还会不会一样。';
+    cap.textContent='再触发一次，看这次两颗球还会不会同色。';
   } else {
-    cap.textContent='不管试多少次，这两颗球永远选一样的颜色。这是真实计算出的结果，不是预设好的动画。';
+    cap.textContent='不管试多少次，两颗球永远同色——只出现过两蓝或两红，从未出现过一红一蓝。这是真实计算出的结果，不是预设动画。';
     document.getElementById('s2Next').classList.remove('story-hidden');
   }
-  setTimeout(()=>{ [a,b].forEach(o=>{o.classList.remove('collapsed-blue','collapsed-orange');o.classList.add('superpos');}); },1300);
 }
 
 function goStage2(){
@@ -307,7 +507,7 @@ function renderResponse(text){
       let t=p.content.replace(/```(\w*)\n([\s\S]*?)```/g,(_,lang,code)=>
         '<pre>'+escHtml(code.trim())+'</pre>');
       // Convert inline `code`
-      t=t.replace(/`([^`]+)`/g,'<code style="background:var(--code-bg);padding:2px 5px;border-radius:4px;font-size:.82rem">$1</code>');
+      t=t.replace(/`([^`]+)`/g,'<code style="background:var(--code-bg);color:#bcd6ee;padding:2px 5px;border-radius:4px;font-family:var(--mono);font-size:.82rem">$1</code>');
       // Convert newlines
       t=t.replace(/\n/g,'<br>');
       html+=t;
@@ -352,12 +552,12 @@ async function simulateAndChart(qasm,canvasId){
       type:'bar',
       data:{labels:labels.map(l=>'|'+l+'⟩'),
         datasets:[{label:'概率 (%)',data:values,
-          backgroundColor:values.map(v=>v>5?'#2563eb':'#93c5fd'),
+          backgroundColor:values.map(v=>v>5?'#3d6ea5':'#3a4550'),
           borderRadius:4,barPercentage:0.7}]},
       options:{responsive:true,maintainAspectRatio:false,
-        scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:{size:11}},
-                   grid:{color:'#e2e8f0'}},
-                x:{ticks:{font:{size:12,family:'monospace'}},grid:{display:false}}},
+        scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:{size:11},color:'#9a988c'},
+                   grid:{color:'#2c2d2f'}},
+                x:{ticks:{font:{size:12,family:'monospace'},color:'#f4efe4'},grid:{display:false}}},
         plugins:{legend:{display:false},
           tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(1)+'%'}}}}
     });
@@ -380,13 +580,13 @@ async function sendMsg(){
       body:JSON.stringify({prompt:text})});
     const data=await resp.json();
     if(data.error){
-      thinkDiv.innerHTML='<span style="color:#dc2626">出错了：'+escHtml(data.error)+'</span>';
+      thinkDiv.innerHTML='<span style="color:var(--danger)">出错了：'+escHtml(data.error)+'</span>';
       statusEl.textContent='请检查 LOOMQ_LLM_* 环境变量是否正确设置';statusEl.className='status error';
     } else {
       thinkDiv.innerHTML=renderResponse(data.reply);
     }
   }catch(e){
-    thinkDiv.innerHTML='<span style="color:#dc2626">网络错误：'+escHtml(e.message)+'</span>';
+    thinkDiv.innerHTML='<span style="color:var(--danger)">网络错误：'+escHtml(e.message)+'</span>';
   }
   busy=false;sendBtn.disabled=false;
   messagesEl.scrollTop=messagesEl.scrollHeight;
