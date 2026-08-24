@@ -11,7 +11,7 @@
 - [x] L1 真机
 - [x] L2 交互体验
 - [x] 工程与产品化
-- [ ] 自定义量子 RISC-V Bonus
+- [x] 自定义量子 RISC-V Bonus
 - [x] 新手引导与视觉叙事 Bonus
 
 ## L1 真机
@@ -163,9 +163,31 @@ bit 和 qubit 区别的绘本、点几下鼠标感受"叠加"和"纠缠"、用�
 以下三项必须齐全且测试通过，才获得 8 分：
 
 ```text
-指令编码规格：[未申报——时间不够，没有做]
-模拟器扩展实现：[未申报]
-端到端测试命令：[未申报]
+指令编码规格：starter_kit/docs/quantum_riscv_isa.md
+  复用标准 RISC-V R-type 字段布局，opcode 固定用官方手册保留给 "custom-0"
+  扩展的 0001011；funct3 选指令类别（QINIT/QGATE1/QGATE2/QGATE3/QMEASURE），
+  funct7 选具体门 id，rs1/rs2/rd 承载量子位下标或目标经典寄存器下标。
+  文档里写明了一个明确记录的取舍：rz/ry/cu1 这类需要连续浮点角度的参数门
+  没有纳入二进制编码范围（7 位 funct7 塞不下任意精度浮点数），只在文本
+  汇编层面保留，这是评估后的工程判断，不是遗漏。
+
+模拟器扩展实现：starter_kit/src/quantum_riscv_emulator.py
+  fork 自官方 riscv_emulator.py（该文件本身未做任何改动，两者互相独立）。
+  经典指令语义（li/add/sub/addi/beq/bne/j，含 x0 恒零）原样复刻；新增
+  qinit/qh/qx/qs/qsdg/qt/qtdg/qcx/qswap/qccx/qmeasure，量子门矩阵直接复用
+  src/reference_simulator.py 里已经验证过的 _apply_single_qubit /
+  _apply_cx / _apply_swap / _apply_ccx（不重新实现一遍量子门数学）。
+  qmeasure 做真正的 Born 规则采样+坍缩，结果写进跟经典部分同一份寄存器堆，
+  所以 beq/bne 可以在程序运行过程中读到刚测量出来的量子结果——量子门和
+  经典分支是运行时交替执行的，不是编译期就能预知结果的假交互。
+
+端到端测试命令：
+  python3 tests/quantum_riscv_test.py
+  9 个测试：11 类指令的二进制编码<->解码互逆断言、拒绝非本扩展 opcode、
+  贝尔态两次测量 300 次全部完美关联、GHZ-3 只出现全 0/全 1、qx 制备 |1>
+  后测量结果驱动经典 beq 分支走向正确的路径、Toffoli(ccx) 门语义验证、
+  以及完全跳过文本汇编、直接从二进制编码字解码执行的端到端跑通（证明
+  编码规格不是只停留在文档/文本层面的装饰）。
 ```
 
 ## 新手引导与视觉叙事 Bonus

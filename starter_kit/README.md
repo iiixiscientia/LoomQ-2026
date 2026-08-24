@@ -28,14 +28,18 @@ starter_kit/
 ├── src/
 │   ├── ir.py / qasm_parser.py / codegen.py / reference_simulator.py / utils.py
 │   ├── hybrid_compiler.py                        # L3：Hybrid-QASM classical{} -> RISC-V 编译器
+│   ├── quantum_riscv_emulator.py                 # Bonus：fork 自 riscv_emulator.py 的量子指令扩展
 │   ├── backends/                                # spinq/braket/originq 执行封装
 │   └── agent/                                    # L2 Agent（agent.py / tools.py / system_prompt.py）
+├── docs/
+│   └── quantum_riscv_isa.md                        # Bonus：自定义量子 RISC-V 指令编码规格文档
 ├── circuits/
 │   ├── bell.qasm / ghz3.qasm                       # 官方公开测试电路
 │   └── coverage/                                     # 12 门白名单覆盖测试电路（自己写的）
 └── tests/
     ├── smoke_test.py / gate_coverage_test.py / originq_ir_roundtrip_test.py
     ├── hybrid_compiler_test.py                       # L3 穷举测试（自建，9 例）
+    ├── quantum_riscv_test.py                         # Bonus 端到端测试（自建，9 例）
     └── agent_smoke_test.py / agent_stress_test.py       # L2 自测
 ```
 
@@ -58,7 +62,10 @@ python3 tests/gate_coverage_test.py
 python3 tests/hybrid_compiler_test.py
 python3 evaluator.py --level l3
 
-# 5. L2 Web 交互入口（不需要 LLM key 也能体验前三幕，见下方「L2 智能体」）
+# 5. Bonus：自定义量子 RISC-V 扩展指令自测（不需要任何 SDK）
+python3 tests/quantum_riscv_test.py
+
+# 6. L2 Web 交互入口（不需要 LLM key 也能体验前三幕，见下方「L2 智能体」）
 python web_app.py
 ```
 
@@ -138,6 +145,22 @@ python3 evaluator.py --level l3          # 官方公开自测（1 例）
 另外手册给出的 Hybrid-QASM 示例里，`classical{}` 内部写了 `//` 行注释（纯粹
 给人类读者看的），tokenizer 和花括号配对都做了防御性的注释跳过，不管隐藏
 用例最终带不带注释都能编译。
+
+## Bonus：自定义量子 RISC-V 扩展指令
+
+```bash
+python3 tests/quantum_riscv_test.py    # 9 例：编码互逆、贝尔态/GHZ-3 统计、
+                                        # 测量驱动经典分支、二进制端到端跑通
+```
+
+**架构**：`src/quantum_riscv_emulator.py` 是 `riscv_emulator.py`（官方、
+L3 用、未改动）的独立 fork，新增 11 类量子指令（`qinit`/6 个单比特门/
+`qcx`/`qswap`/`qccx`/`qmeasure`），复用标准 RISC-V R-type 字段布局、opcode
+用官方保留的 custom-0（`0001011`），编码规格见 `docs/quantum_riscv_isa.md`。
+量子门矩阵直接复用 `src/reference_simulator.py` 已验证过的实现，不重新写
+一遍量子门数学。关键设计：`qmeasure` 的结果写进跟经典指令**同一份**寄存器
+堆，所以 `beq`/`bne` 能在运行时读到刚测量出来的量子结果——量子门和经典
+分支是真正交替执行的。
 
 ## 真机接入证据
 
