@@ -45,14 +45,27 @@ def split_hybrid_qasm(source: str) -> Tuple[List[str], Optional[str]]:
         open_idx = match.end() - 1  # 指向那个 '{'
         depth = 0
         close_idx = None
-        for i in range(open_idx, len(source)):
-            if source[i] == "{":
+        i = open_idx
+        n = len(source)
+        while i < n:
+            ch = source[i]
+            # 行注释里的花括号不算数（防止注释文字里出现 "{"/"}" 打乱配对计数）
+            if ch == "/" and i + 1 < n and source[i + 1] == "/":
+                nl = source.find("\n", i)
+                i = n if nl == -1 else nl
+                continue
+            if ch == "#":
+                nl = source.find("\n", i)
+                i = n if nl == -1 else nl
+                continue
+            if ch == "{":
                 depth += 1
-            elif source[i] == "}":
+            elif ch == "}":
                 depth -= 1
                 if depth == 0:
                     close_idx = i
                     break
+            i += 1
         if close_idx is None:
             raise ValueError("classical {} 块缺少匹配的右花括号")
         classical_src = source[open_idx + 1 : close_idx]
@@ -74,6 +87,12 @@ def split_hybrid_qasm(source: str) -> Tuple[List[str], Optional[str]]:
 # ── 2. 经典块的 tokenizer ────────────────────────────────────────────────────
 
 _TOKEN_SPEC = [
+    # 手册第三节原文说 Hybrid-QASM 的 classical 块"机器可解析，不用自然语言
+    # 注释描述语义"——但手册自己给出的示例里，classical{} 内部确实写了
+    # "// ..." 注释（纯粹给人类读者看的，不是语法的一部分）。防御性地把
+    # 行注释当空白跳过，不管隐藏用例到底会不会带注释，两种情况都能处理。
+    ("COMMENT", r"//[^\n]*"),
+    ("HASH_COMMENT", r"#[^\n]*"),
     ("EQEQ", r"=="),
     ("NEQ", r"!="),
     ("CREG", r"c\[\s*(\d+)\s*\]"),
@@ -115,7 +134,7 @@ def tokenize(text: str) -> List[Token]:
         kind = m.lastgroup
         value = m.group()
         pos = m.end()
-        if kind == "SKIP":
+        if kind in ("SKIP", "COMMENT", "HASH_COMMENT"):
             continue
         tokens.append(Token(kind, value))
     return tokens
@@ -262,20 +281,34 @@ def parse_classical(source: str) -> List[Stmt]:
 
 # ── 4. 代码生成：AST -> RISC-V 汇编 ──────────────────────────────────────────
 
-_SCRATCH_POOL = [f"x{i}" for i in range(20, 30)]  # x20..x29，栈式分配
+# 寄存器堆一共 32 个（x0-x31）。x0 恒为 0，x1-x9 是声明的经典变量 r1-r9，
+# x10..x(9+measured_bits) 是评测系统会注入的测量位，只读、绝不能被临时
+# 寄存器覆盖——之前写死 "x20-x29" 当临时寄存器池，当测量位数 ≥10 时
+# c[10] 恰好也是 x20，会被临时寄存器悄悄覆盖，导致同一个 c[k] 被重复读取
+# 时拿到错误的值（已经用回归测试复现过这个 bug，见
+# tests/hybrid_compiler_test.py 的 test_scratch_pool_avoids_measured_registers）。
+# 修法：临时寄存器池改成从寄存器堆顶 x31 往下分配，永远晚于
+# "x10..x(9+measured_bits)" 这段测量位保留区，而不是从固定的低位数字开始。
+def _scratch_pool_for(measured_bits: int) -> List[str]:
+    reserved_top = 9 + max(measured_bits, 0)  # x10..x(9+measured_bits) 保留给测量位
+    floor = max(reserved_top, 9)              # 至少要晚于 x9（声明变量区）
+    return [f"x{i}" for i in range(31, floor, -1)]
 
 
 class CodeGen:
-    def __init__(self):
+    def __init__(self, measured_bits: int = 0):
         self.lines: List[str] = []
+        self._scratch_pool = _scratch_pool_for(measured_bits)
         self._scratch_sp = 0          # 下一个可用槽位（栈指针）
         self._used_scratch: set = set()
         self._label_counter = 0
 
     def _alloc_scratch(self) -> str:
-        if self._scratch_sp >= len(_SCRATCH_POOL):
-            raise ValueError("classical 块表达式嵌套太深，超出临时寄存器池 (x20-x29)")
-        reg = _SCRATCH_POOL[self._scratch_sp]
+        if self._scratch_sp >= len(self._scratch_pool):
+            raise ValueError(
+                "classical 块表达式嵌套太深或测量位数太多，临时寄存器池已耗尽"
+            )
+        reg = self._scratch_pool[self._scratch_sp]
         self._scratch_sp += 1
         self._used_scratch.add(reg)
         return reg
@@ -420,9 +453,26 @@ class CodeGen:
         return "\n".join(self.lines)
 
 
-def compile_classical_block(classical_src: str) -> str:
+def compile_classical_block(classical_src: str, measured_bits: int = 0) -> str:
     stmts = parse_classical(classical_src)
-    return CodeGen().gen_program(stmts)
+    return CodeGen(measured_bits).gen_program(stmts)
+
+
+def _count_measured_bits(hybrid_qasm_str: str, classical_src: Optional[str]) -> int:
+    """算出需要给测量位保留多少个寄存器（x10..x(9+N)），取以下两个信号的
+    较大值，尽量不依赖某一处声明是否规范：
+      1. `creg c[N];` 声明的宽度；
+      2. classical 块里实际出现过的最大 c[k] 下标 + 1
+         （防止 creg 声明和 classical 块引用的下标对不上）。
+    """
+    n = 0
+    decl = re.search(r"\bcreg\s+c\s*\[\s*(\d+)\s*\]", hybrid_qasm_str)
+    if decl:
+        n = max(n, int(decl.group(1)))
+    if classical_src:
+        for m in re.finditer(r"c\[\s*(\d+)\s*\]", classical_src):
+            n = max(n, int(m.group(1)) + 1)
+    return n
 
 
 # ── 5. 对外入口 ──────────────────────────────────────────────────────────
@@ -432,5 +482,6 @@ def compile_hybrid_qasm(hybrid_qasm_str: str) -> Tuple[List[str], str]:
     if classical_src is None:
         # 没有经典块：合法输入，返回空汇编（不是错误）
         return quantum_ops, "li x0, 0"
-    assembly = compile_classical_block(classical_src)
+    measured_bits = _count_measured_bits(hybrid_qasm_str, classical_src)
+    assembly = compile_classical_block(classical_src, measured_bits)
     return quantum_ops, assembly

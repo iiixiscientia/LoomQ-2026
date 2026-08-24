@@ -188,6 +188,56 @@ classical {
             cases.append(({"x10": b0, "x11": b1, "x12": b2}, exp))
         self._check(src, cases)
 
+    def test_rubric_example_with_inline_comments(self):
+        # 赛题手册第五节说 Hybrid-QASM "机器可解析，不用自然语言注释描述语义"，
+        # 但手册自己给出的示例代码里，classical{} 内部确实写了 "// ..." 注释
+        # （纯粹给人类读者看的）。不管隐藏用例到底带不带注释，两种情况都要能编译。
+        src = """OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+h q[0];
+measure q[0] -> c[0];
+classical { // 经典控制块：测量结果 c[0] 由评测系统注入 x10 寄存器
+ if (c[0] == 1) {
+ r1 = 100; // r1..r9 映射到 RISC-V x1..x9 通用寄存器
+ } else {
+ r1 = 10;
+ }
+ r1 = r1 + 5;
+}
+cx q[0], q[1];
+"""
+        quantum_ops, _ = compile_hybrid_qasm(src)
+        self.assertEqual(quantum_ops, ["h q[0];", "measure q[0] -> c[0];", "cx q[0], q[1];"])
+        self._check(src, [({"x10": 0}, {"x1": 15}), ({"x10": 1}, {"x1": 105})])
+
+    def test_scratch_pool_avoids_measured_registers(self):
+        # 回归测试：曾经的 bug——临时寄存器池固定写死 x20-x29，当测量位数
+        # >= 10 时 c[10] 恰好也是 x20，会被临时寄存器悄悄覆盖。这里用 12
+        # 个测量位（c[10]->x20）、并且同一个 c[10] 在两条独立的 if 里各读
+        # 一次，第二次读到的必须还是原始注入值，不能被第一次比较污染。
+        qreg_n = 12
+        creg_decl = f"creg c[{qreg_n}];"
+        measures = "\n".join(f"measure q[{i}] -> c[{i}];" for i in range(qreg_n))
+        src = f"""OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[{qreg_n}];
+{creg_decl}
+{measures}
+classical {{
+  if (c[10] == 0) {{ r1 = 1; }} else {{ r1 = 2; }}
+  if (c[10] == 1) {{ r2 = 1; }} else {{ r2 = 2; }}
+}}
+"""
+        cases = []
+        for v in (0, 1):
+            injections = {f"x{10 + i}": 0 for i in range(qreg_n)}
+            injections["x20"] = v  # c[10] -> x20
+            exp = {"x1": 1 if v == 0 else 2, "x2": 1 if v == 1 else 2}
+            cases.append((injections, exp))
+        self._check(src, cases)
+
     def test_no_classical_block_is_legal(self):
         src = """OPENQASM 2.0;
 include "qelib1.inc";
