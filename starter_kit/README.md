@@ -9,7 +9,7 @@
 ```text
 starter_kit/
 ├── adapter.py                # 提交契约入口：transpile() / run() / agent_chat() / compile_hybrid()
-├── submission.yaml            # 声明参赛 Level、运行时、L2 环境变量协议
+├── submission.yaml            # 声明参赛 Level、运行时、L2 环境变量协议（l1/l2/l3 均为 true）
 ├── evaluator.py                 # 官方公开自测器（未改动，改了也不算数）
 ├── riscv_emulator.py             # L3 用的 RISC-V 模拟器（官方提供，未改动）
 ├── llm_client.py                  # 官方提供的 L2 传输层（无第三方依赖，未改动）
@@ -20,12 +20,14 @@ starter_kit/
 ├── requirements-spinq.txt               # spinq_env/ 专用依赖（跟主环境 antlr4 版本互斥）
 ├── spinq_runner.py                       # 在 spinq_env/ 里跑的独立脚本，被 subprocess 调用
 ├── Dockerfile                             # 官方基线容器 + 建 spinq_env 的步骤
+├── web_app.py                              # L2 Web 入口：零依赖单文件（绘本+两幕实验+电路实验室+自由对话）
 ├── evidence/README.md                      # 人工评分项申报入口（真机/L2交互/工程叙事/Bonus）
 ├── real_hardware/                           # 真机接入证据脚本
 │   ├── run_originq_real.py / run_spinq_real.py / verify_result.py
 │   └── results/                               # 跑出来的 result.json
 ├── src/
 │   ├── ir.py / qasm_parser.py / codegen.py / reference_simulator.py / utils.py
+│   ├── hybrid_compiler.py                        # L3：Hybrid-QASM classical{} -> RISC-V 编译器
 │   ├── backends/                                # spinq/braket/originq 执行封装
 │   └── agent/                                    # L2 Agent（agent.py / tools.py / system_prompt.py）
 ├── circuits/
@@ -33,6 +35,7 @@ starter_kit/
 │   └── coverage/                                     # 12 门白名单覆盖测试电路（自己写的）
 └── tests/
     ├── smoke_test.py / gate_coverage_test.py / originq_ir_roundtrip_test.py
+    ├── hybrid_compiler_test.py                       # L3 穷举测试（自建，9 例）
     └── agent_smoke_test.py / agent_stress_test.py       # L2 自测
 ```
 
@@ -50,6 +53,13 @@ python3 evaluator.py --target spinq,originq,braket
 
 # 3. 12 门白名单覆盖测试（自己写的，比官方公开集更细）
 python3 tests/gate_coverage_test.py
+
+# 4. L3 混合编译自测（不需要任何 SDK，纯 Python 标准库）
+python3 tests/hybrid_compiler_test.py
+python3 evaluator.py --level l3
+
+# 5. L2 Web 交互入口（不需要 LLM key 也能体验前三幕，见下方「L2 智能体」）
+python web_app.py
 ```
 
 ## 为什么 spinq 要单独一个 venv
@@ -104,6 +114,30 @@ function calling 循环。两个工具（`src/agent/tools.py`）：
 `backend_capabilities.json`（`requires_account`/`free_quota`/`cloud`）不
 一致——两份数据长得像但没对照过。现在 `find_backends` 直接读官方文件，不再
 自己维护副本。
+
+## L3 混合编译（Hybrid-QASM -> RISC-V）
+
+```bash
+python3 tests/hybrid_compiler_test.py   # 9 个自建用例，穷举所有测量值组合
+python3 evaluator.py --level l3          # 官方公开自测（1 例）
+```
+
+**架构**：`adapter.compile_hybrid(hybrid_qasm_str)` → `src/hybrid_compiler.py`。
+`split_hybrid_qasm()` 用花括号配对（而不是找第一个 `}`）把 `classical{}` 块
+从源码里切出来，块外的量子指令按原始顺序原样返回；块内文本经手写 tokenizer
++ 递归下降 parser 生成 AST（支持 if/else 嵌套、+ - == != 、括号），再由
+`CodeGen` 生成 RISC-V 汇编：`r1..r9 -> x1..x9`，`c[k] -> x(10+k)`。
+
+⚠️ **一个已经修过的真实 bug**：临时寄存器池最初写死用 `x20-x29`，当电路测量
+位数 ≥10 个时 `c[10]` 换算下来正好也是 `x20`，同一个 `c[10]` 被读两次会被
+第一次比较悄悄覆盖掉。已经用 12 测量位、`c[10]` 重复读取的用例复现并修复——
+临时寄存器改成根据实际 `creg` 大小动态从寄存器堆顶 `x31` 往下分配，永远
+避开变量区（`x1-x9`）和测量位区（`x10..x(9+N)`）。见
+`tests/hybrid_compiler_test.py::test_scratch_pool_avoids_measured_registers`。
+
+另外手册给出的 Hybrid-QASM 示例里，`classical{}` 内部写了 `//` 行注释（纯粹
+给人类读者看的），tokenizer 和花括号配对都做了防御性的注释跳过，不管隐藏
+用例最终带不带注释都能编译。
 
 ## 真机接入证据
 
