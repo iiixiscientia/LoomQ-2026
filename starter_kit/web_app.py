@@ -206,6 +206,40 @@ border-radius:3px;margin:-11px 0 0 -6.5px}
 .bulb::after{content:'';position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);
 width:18px;height:9px;border:2px solid var(--paper);border-top:none;border-radius:0 0 4px 4px}
 .molecule line{stroke:var(--paper);stroke-width:1.4;opacity:.55}
+
+/* 电路实验室（桥梁2/3：盲盒拼电路 -> 实时 QASM -> 选后端 -> 保真度） */
+.lab-row{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-bottom:1rem}
+.lab-box{display:flex;flex-direction:column;align-items:center;gap:.4rem;cursor:pointer}
+.lab-box .orb{width:64px;height:64px}
+.lab-box .orb:not(.superpos){background:#33383e;box-shadow:inset 0 0 0 2px #454b52;animation:none}
+.lab-tag{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.lab-connect{width:34px;height:34px;border-radius:50%;border:2px solid var(--muted-dark);
+background:var(--page);color:var(--muted-dark);font-size:1rem;cursor:pointer;flex-shrink:0;
+transition:all .15s}
+.lab-connect.on{background:var(--tan);border-color:var(--tan);color:#2a2210}
+.lab-code-panel{background:var(--code-bg);border-radius:12px;padding:.85rem 1rem;max-width:520px;
+margin:0 auto 1rem}
+.lab-code-label{font-size:.68rem;color:var(--muted-dark);text-transform:uppercase;letter-spacing:.08em;
+margin-bottom:.4rem}
+.lab-code-panel pre{font-family:var(--mono);font-size:.8rem;color:#bcd6ee;white-space:pre-wrap;
+line-height:1.6}
+.lab-actions{display:flex;justify-content:center;gap:.75rem;margin-bottom:1rem}
+.lab-backend-picker{max-width:560px;margin:0 auto 1rem}
+.lab-backend-title{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:.7rem;text-align:left}
+.lab-backend-cards{display:grid;grid-template-columns:1fr;gap:.6rem}
+@media(min-width:540px){.lab-backend-cards{grid-template-columns:repeat(3,1fr)}}
+.lab-backend-card{background:var(--panel);color:var(--paper);border-radius:12px;padding:.85rem;
+text-align:left;cursor:pointer;transition:transform .15s;border:2px solid transparent}
+.lab-backend-card:hover{transform:translateY(-2px)}
+.lab-backend-card.picked{border-color:var(--tan)}
+.lab-backend-card h4{font-size:.8rem;font-weight:700;margin-bottom:.3rem}
+.lab-backend-card p{font-size:.72rem;color:var(--muted-dark);line-height:1.5}
+.lab-backend-card .tag{display:inline-block;font-family:var(--mono);font-size:.62rem;
+background:var(--blue);color:#fff;padding:1px 7px;border-radius:999px;margin-top:.4rem}
+.lab-fidelity{max-width:520px;margin:.75rem auto 0;font-size:.85rem;line-height:1.7;text-align:left}
+.lab-fidelity .num{font-family:var(--mono);font-weight:700}
+.lab-fidelity .num.pass{color:#4a9d6b}
+.lab-fidelity .num.fail{color:var(--red)}
 </style>
 </head>
 <body>
@@ -255,13 +289,62 @@ width:18px;height:9px;border:2px solid var(--paper);border-top:none;border-radiu
     </div>
     <div class="tally" id="s2Tally"></div>
     <div id="s2Next" class="story-hidden">
-      <button class="story-btn primary" onclick="goStage3()">下一步：自己动手做实验 ›</button>
+      <button class="story-btn primary" onclick="goStage3()">下一步：亲手搭一个电路 ›</button>
     </div>
   </div>
 
-  <!-- 第三幕：自由探索（原有聊天界面） -->
+  <!-- 第三幕：电路实验室——点盲盒=H门，接连线=CX门，实时同步 QASM，
+       选后端 + 真实计算保真度。装配的正是 GHZ-3（跟官方 L1/L2 测试电路
+       同款），呼应后面第四幕 Agent 的 ENTANGLE 建议卡片。 -->
+  <div class="story story-hidden" id="circuitLab">
+    <div class="bubble">
+      <span>现在轮到你亲手搭一个电路了。点一下盲盒＝给它施加"叠加"；点亮两个盒子中间的
+      连接钮＝把它们"纠缠"在一起。搭完点"运行"，交给真正的模拟器算出结果——不是预设动画。</span>
+    </div>
+    <div class="lab-row">
+      <div class="lab-box" id="labBox0" onclick="labClickBox(0)">
+        <div class="orb" id="labOrb0"></div>
+        <div class="lab-tag">q[0]</div>
+      </div>
+      <button class="lab-connect" id="labConnect01" onclick="labToggleConnect(0)" title="纠缠 q[0]–q[1]">⚭</button>
+      <div class="lab-box" id="labBox1" onclick="labClickBox(1)">
+        <div class="orb" id="labOrb1"></div>
+        <div class="lab-tag">q[1]</div>
+      </div>
+      <button class="lab-connect" id="labConnect12" onclick="labToggleConnect(1)" title="纠缠 q[1]–q[2]">⚭</button>
+      <div class="lab-box" id="labBox2" onclick="labClickBox(2)">
+        <div class="orb" id="labOrb2"></div>
+        <div class="lab-tag">q[2]</div>
+      </div>
+    </div>
+    <div class="lab-code-panel">
+      <div class="lab-code-label">实时生成的 QASM</div>
+      <pre id="labQasm">// 点一下盲盒开始搭建…</pre>
+    </div>
+    <div class="lab-actions">
+      <button class="story-btn" onclick="labReset()">重置</button>
+      <button class="story-btn primary" onclick="labOpenBackendPicker()">运行 ›</button>
+    </div>
+
+    <div class="lab-backend-picker story-hidden" id="labBackendPicker">
+      <div class="lab-backend-title">交给哪个后端跑？（文案取自 backend_capabilities.json，
+      演示统一用本地精确模拟器执行——真机需要真实排队和账号，不适合现场演示，
+      但 adapter.py 的 run()/transpile() 里三个后端都是真实接入的）</div>
+      <div class="lab-backend-cards" id="labBackendCards"></div>
+    </div>
+
+    <div class="lab-result story-hidden" id="labResult">
+      <div class="chart-box"><h4>测量结果分布（有限次抽样，不是理论值）</h4><canvas id="labChart"></canvas></div>
+      <div class="lab-fidelity" id="labFidelity"></div>
+      <div id="labNext" class="story-hidden">
+        <button class="story-btn primary" onclick="goStage4()">下一步：交给 Agent 帮你做 ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第四幕：自由探索（原有聊天界面） -->
   <div class="welcome story-hidden" id="welcome">
-    <h2>现在你已经知道叠加和纠缠是什么了，想自己试试吗？</h2>
+    <h2>刚才是你自己搭的电路，现在把这些体力活交给 Agent 试试？</h2>
     <div class="cards">
       <div class="card" onclick="tryPrompt('帮我生成一个贝尔态电路，我想看两个量子比特纠缠是什么效果')">
         <div class="icon">E</div>
@@ -472,9 +555,167 @@ function goStage2(){
 
 function goStage3(){
   document.getElementById('storyStage2').classList.add('story-hidden');
+  document.getElementById('circuitLab').classList.remove('story-hidden');
+  renderLab();
+}
+
+function goStage4(){
+  document.getElementById('circuitLab').classList.add('story-hidden');
   document.getElementById('welcome').classList.remove('story-hidden');
   document.getElementById('chatAreaWrap').classList.remove('story-hidden');
   inputEl.focus();
+}
+
+// ── 第三幕：电路实验室（桥梁2：盲盒拼电路 -> 实时 QASM；桥梁3：选后端 -> 真实保真度）
+// 装配出来的正是官方 L1/L2 测试用的 GHZ-3 电路：h q[0]; cx q[0],q[1]; cx q[1],q[2];
+const labState={h:[false,false,false], cx01:false, cx12:false};
+
+// 取自 backend_capabilities.json（L2「智能选后端」判定的唯一基准表），
+// 这里只挑 3 条有代表性的做演示卡片，文案跟那份文件保持一致。
+const LAB_BACKENDS=[
+  {id:'braket_local_simulator', name:'AWS Braket LocalSimulator', tag:'模拟器 · 零排队',
+   note:'本地跑，免费，不需要 AWS 账号，最多 25 比特——推荐新手默认选它。'},
+  {id:'spinq_cloud_qpu', name:'量旋云真机（超导/核磁）', tag:'真机 · 需排队',
+   note:'2–8 比特，需要注册 SpinQ Cloud 账号，排队通常几分钟到几小时。'},
+  {id:'originq_wukong', name:'本源悟空超导真机', tag:'真机 · 需排队',
+   note:'最多 72 比特，需要本源量子云 API Token，排队通常按小时计。'}
+];
+
+function labActivatedSet(){
+  // q1 会因为跟 q0 的 cx 而"沾"上叠加；q2 同理沾 q1。用于决定盲盒该不该显示彩虹态。
+  const active=[labState.h[0], false, false];
+  active[1]=labState.h[1] || (labState.cx01 && active[0]);
+  active[2]=labState.h[2] || (labState.cx12 && active[1]);
+  return active;
+}
+
+function labBuildQasmLines(){
+  const lines=[];
+  if(labState.h[0]) lines.push('h q[0];');
+  if(labState.h[1]) lines.push('h q[1];');
+  if(labState.h[2]) lines.push('h q[2];');
+  if(labState.cx01) lines.push('cx q[0],q[1];');
+  if(labState.cx12) lines.push('cx q[1],q[2];');
+  return lines;
+}
+
+function renderLab(){
+  const active=labActivatedSet();
+  for(let i=0;i<3;i++){
+    const orb=document.getElementById('labOrb'+i);
+    orb.classList.remove('superpos','collapsed-blue','collapsed-red');
+    if(active[i]) orb.classList.add('superpos');
+  }
+  document.getElementById('labConnect01').classList.toggle('on', labState.cx01);
+  document.getElementById('labConnect12').classList.toggle('on', labState.cx12);
+  const lines=labBuildQasmLines();
+  document.getElementById('labQasm').textContent = lines.length
+    ? lines.join('\n')
+    : '// 点一下盲盒开始搭建…';
+  document.getElementById('labBackendPicker').classList.add('story-hidden');
+  document.getElementById('labResult').classList.add('story-hidden');
+}
+
+function labClickBox(i){
+  labState.h[i]=!labState.h[i];
+  renderLab();
+}
+function labToggleConnect(pairStart){
+  if(pairStart===0) labState.cx01=!labState.cx01;
+  else labState.cx12=!labState.cx12;
+  renderLab();
+}
+function labReset(){
+  labState.h=[false,false,false];
+  labState.cx01=false; labState.cx12=false;
+  renderLab();
+}
+
+function labOpenBackendPicker(){
+  const lines=labBuildQasmLines();
+  if(!lines.length){ alert('先点一下盲盒或连接钮，搭出点什么再运行～'); return; }
+  const wrap=document.getElementById('labBackendCards');
+  wrap.innerHTML=LAB_BACKENDS.map(function(b){
+    return `<div class="lab-backend-card" onclick="labRunOn('${b.id}')">
+      <h4>${b.name}</h4><p>${b.note}</p><span class="tag">${b.tag}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('labBackendPicker').classList.remove('story-hidden');
+  document.getElementById('labResult').classList.add('story-hidden');
+}
+
+function hellingerFidelity(p, q){
+  const keys=new Set([...Object.keys(p), ...Object.keys(q)]);
+  let sum=0;
+  keys.forEach(function(k){
+    const a=Math.sqrt(p[k]||0), b=Math.sqrt(q[k]||0);
+    sum += (a-b)*(a-b);
+  });
+  const h = Math.sqrt(sum) / Math.SQRT2;
+  return 1 - h;
+}
+
+let labChartInstance=null;
+
+async function labRunOn(backendId){
+  const picked=LAB_BACKENDS.find(function(b){return b.id===backendId});
+  document.querySelectorAll('.lab-backend-card').forEach(function(el,idx){
+    el.classList.toggle('picked', LAB_BACKENDS[idx].id===backendId);
+  });
+  const lines=labBuildQasmLines();
+  const measures=[0,1,2].map(function(i){return `measure q[${i}] -> c[${i}];`});
+  const qasm='OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[3];\ncreg c[3];\n'
+    + lines.join('\n') + '\n' + measures.join('\n');
+
+  const resultBox=document.getElementById('labResult');
+  const fidelityBox=document.getElementById('labFidelity');
+  resultBox.classList.remove('story-hidden');
+  fidelityBox.innerHTML='<span style="color:var(--muted)">正在本地精确模拟器上运行…</span>';
+  document.getElementById('labNext').classList.add('story-hidden');
+
+  const ideal=await fetchDist(qasm, null);
+  if(!ideal){
+    fidelityBox.innerHTML='<span style="color:var(--danger)">模拟失败，检查一下是不是搭了个空电路。</span>';
+    return;
+  }
+
+  // 演示统一走本地精确模拟器执行（真机需要真实账号和排队，不适合现场演示）。
+  // 但保真度不是摆设：像官方 L1 评测一样，从理想分布里做有限次抽样，
+  // 算出真实的、会因为抽样次数而有涨落的 Hellinger fidelity。
+  const SHOTS=8192; // 跟官方 L1 评测同样的 shots 数，抽样噪声才有可比性
+  const counts={};
+  for(let i=0;i<SHOTS;i++){
+    const k=sampleFromDist(ideal);
+    counts[k]=(counts[k]||0)+1;
+  }
+  const sampled={};
+  Object.keys(counts).forEach(function(k){ sampled[k]=counts[k]/SHOTS; });
+  const fidelity=hellingerFidelity(sampled, ideal);
+
+  const labels=Object.keys(ideal).sort();
+  const values=labels.map(function(k){ return +(100*(sampled[k]||0)).toFixed(2); });
+  const canvas=document.getElementById('labChart');
+  if(labChartInstance) labChartInstance.destroy();
+  labChartInstance=new Chart(canvas,{
+    type:'bar',
+    data:{labels:labels.map(function(l){return '|'+l+'⟩'}),
+      datasets:[{label:'抽样占比 (%)',data:values,
+        backgroundColor:values.map(function(v){return v>5?'#3d6ea5':'#3a4550'}),
+        borderRadius:4,barPercentage:0.7}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true,max:100,ticks:{callback:function(v){return v+'%'},font:{size:11},color:'#9a988c'},
+                 grid:{color:'#2c2d2f'}},
+              x:{ticks:{font:{size:12,family:'monospace'},color:'#f4efe4'},grid:{display:false}}},
+      plugins:{legend:{display:false}}}
+  });
+
+  const pass = fidelity>=0.97;
+  fidelityBox.innerHTML =
+    `本次在 <b>${picked.name}</b>（演示实际执行在本地精确模拟器上）跑了 <b>${SHOTS}</b> 次采样。`+
+    ` Hellinger 保真度：<span class="num ${pass?'pass':'fail'}">${fidelity.toFixed(4)}</span>`+
+    ` （官方判定线是 ≥ 0.97，${pass?'这次过线了':'这次没过线——抽样次数越多越接近理论值，这也是真实误差的样子'}）。`+
+    ` 分布跟你搭的电路是否符合直觉：${labState.cx01||labState.cx12?'三颗球（或两颗）应该几乎总是同一种结果同时出现——这就是 GHZ 纠缠。':'没有连线的话，每颗球的结果互不影响。'}`;
+  document.getElementById('labNext').classList.remove('story-hidden');
 }
 
 function addMsg(role,content){
