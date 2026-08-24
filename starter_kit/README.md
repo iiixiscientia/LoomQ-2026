@@ -1,13 +1,13 @@
-# LoomQ 提交（starter-kit/）
+# LoomQ 提交（starter_kit/）
 
-这是我们队伍的正式提交。2026-08-01 题面定稿后，官方把 `starter-kit/` 定为
+这是我们队伍的正式提交。2026-08-01 题面定稿后，官方把 `starter_kit/` 定为
 **构建与评测根目录**——这个目录本身就是提交内容，不再是"仓库根目录随便放一
 个 submission/ 文件夹"那种结构。
 
 ## 目录结构
 
 ```text
-starter-kit/
+starter_kit/
 ├── adapter.py                # 提交契约入口：transpile() / run() / agent_chat() / compile_hybrid()
 ├── submission.yaml            # 声明参赛 Level、运行时、L2 环境变量协议
 ├── evaluator.py                 # 官方公开自测器（未改动，改了也不算数）

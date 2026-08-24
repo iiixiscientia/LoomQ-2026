@@ -11,7 +11,7 @@
 ## 1.0.1 - 2026-07-27
 
 - Add the read-only local final-submission preflight.
-- Define `starter-kit/` as the build and evaluation root in official forks.
+- Define `starter_kit/` as the build and evaluation root in official forks.
 - Document commit-SHA submission, server-side cutoff time, receipts, and resubmission rules.
 
 ## 1.0.0 - 2026-07-11

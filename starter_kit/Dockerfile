@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/starter-kit
+WORKDIR /workspace/starter_kit
 COPY requirements.txt requirements-spinq.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 

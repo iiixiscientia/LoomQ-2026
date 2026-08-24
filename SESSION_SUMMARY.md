@@ -3,7 +3,7 @@
 这份文档给"新开一个 Cowork 窗口"之后的自己看。**从今天起，这个目录
 （`latest-version/LoomQ-2026/`）才是真正的工作仓库**——它是官方
 `QAIDAO/LoomQ-2026` 的公开 fork（origin 指向用户自己的 GitHub 账号），
-正式提交路径是这里的 `starter-kit/` 子目录。
+正式提交路径是这里的 `starter_kit/` 子目录。
 
 旧目录 `/Users/lian/OrbStack/fedora/home/lian/LoomQ-2026/`（本目录再往上
 两层）**从今天起只作参考，不再是工作区**——那边的 `submission/` 是题面
@@ -16,8 +16,8 @@
 赛题正式定稿，两处发生了实质性变化（详细 diff 见对话记录，这里只记结论）：
 
 1. **提交流程整个变了**：不再是"提交一个仓库根目录"，而是 fork 里的
-   `starter-kit/` 子目录本身就是构建与评测根目录；新增本地预检脚本
-   `starter-kit/prepare_submission.py --team-id <GITHUB用户名>`；正式提交
+   `starter_kit/` 子目录本身就是构建与评测根目录；新增本地预检脚本
+   `starter_kit/prepare_submission.py --team-id <GITHUB用户名>`；正式提交
    走 `QAIDAO/LoomQ-2026` 的"LoomQ 最终提交" Issue（填 fork 地址 + 40 位
    commit SHA），**Issue 创建时间**才是生效时间，不是 commit 时间。
    **截止时间：2026-08-25 12:00 UTC+8**。
@@ -36,7 +36,7 @@
 
 把旧仓库 `submission/` 下的 `src/`（parser/ir/codegen/backends）、
 `real_hardware/`、`circuits/coverage/`、`spinq_runner.py` 原样迁移到这里
-的 `starter-kit/`。用户在自己 Fedora 机器上（真正装全三个 SDK 的 venv 其实
+的 `starter_kit/`。用户在自己 Fedora 机器上（真正装全三个 SDK 的 venv 其实
 在**旧仓库根目录的 `venv/`**，不是 `submission/venv`——踩过一次找错 venv
 的坑）跑通：
 
@@ -50,7 +50,7 @@
 `src/agent/`（agent.py / tools.py / system_prompt.py）全部重写：
 
 - 协议从 Anthropic tool-use 换成 OpenAI function calling，走组委会提供的
-  `starter-kit/llm_client.py`（无第三方依赖，按路径用 importlib 加载，不
+  `starter_kit/llm_client.py`（无第三方依赖，按路径用 importlib 加载，不
   用 sys.path 技巧，避免跟环境里同名包冲突）。
 - **3 次调用预算硬约束**逼出的设计：`MAX_CALLS` 读环境变量（默认3），循环
   严格计数；输出 token 预算动态平分给剩余调用次数；硬性格式规则（"最终必须
@@ -66,7 +66,7 @@
 （字段名 `account_required`/`cost:"free_tier"`/`kind:"cloud_simulator_or_qpu"`），
 跟仓库里从第一天就有的官方 `backend_capabilities.json`（字段名
 `requires_account`/`cost:"free_quota"`/`kind:"cloud"`）不一致——两份数据长
-得像但没人对照过内容。旧版 system prompt 里"starter-kit 官方只给了 .md 没
+得像但没人对照过内容。旧版 system prompt 里"starter_kit 官方只给了 .md 没
 给机读版"的说法是**错的**，json 从发布第一天就在。现在直接读官方那份，删掉
 了自己维护的副本（`submission/data/backend_capabilities.json` 那份不要再
 参考了，是错的）。
@@ -101,9 +101,9 @@
    权限报错（"Operation not permitted"，`git status` 末尾清理锁文件时报的，
    不是致命错误但没查清楚原因），新会话如果要做 git 操作，先确认这个锁
    文件的情况，不要在没搞清楚之前强行删锁文件或者做破坏性 git 操作。
-   工作区里还有个 `starter-kit/.nfs.20051026.2d81` 的 NFS 临时文件，是
+   工作区里还有个 `starter_kit/.nfs.20051026.2d81` 的 NFS 临时文件，是
    挂载文件系统的产物，commit 前应该清掉或者加进 `.gitignore`。
-2. **`starter-kit/tests/originq_ir_roundtrip_test.py` 和
+2. **`starter_kit/tests/originq_ir_roundtrip_test.py` 和
    `tests/smoke_test.py` 没有在这次验证里单独确认过**——迁移了但没跑，
    理论上不涉及改动过的部分应该没问题，提交前保险起见跑一下。
 3. **L2 的多轮对话场景、更大样本量的压力测试可靠性**——跟旧仓库
@@ -114,5 +114,5 @@
    在 `adapter.py` 里依然是 `NotImplementedError`。
 5. 旧仓库根目录的 `SESSION_SUMMARY.md`/`SOP.md` 还没更新指向这个新目录
    ——如果这次会话没来得及做，新会话记得去旧仓库根目录补一个"工作区已经
-   搬到 latest-version/LoomQ-2026/starter-kit/"的指路说明，避免又对着旧
+   搬到 latest-version/LoomQ-2026/starter_kit/"的指路说明，避免又对着旧
    代码继续改。

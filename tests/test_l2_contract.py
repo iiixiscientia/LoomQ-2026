@@ -9,8 +9,8 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CLIENT = ROOT / "starter-kit" / "llm_client.py"
-POLICY = ROOT / "starter-kit" / "l2_policy.json"
+CLIENT = ROOT / "starter_kit" / "llm_client.py"
+POLICY = ROOT / "starter_kit" / "l2_policy.json"
 
 
 def load_client():

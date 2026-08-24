@@ -1,7 +1,7 @@
 {
-  "_comment": "starter-kit/backend_capabilities.md 的机读版——starter-kit 里只给了表格没给 JSON（可能是发布包漏了，也可能是故意留给选手自己转录），这份是照着那张表逐字转录的，数值/账号要求都跟 .md 一致。L2 Agent 的智能选后端工具直接加载这份，不靠 LLM 记忆背答案。",
+  "_comment": "starter_kit/backend_capabilities.md 的机读版——starter_kit 里只给了表格没给 JSON（可能是发布包漏了，也可能是故意留给选手自己转录），这份是照着那张表逐字转录的，数值/账号要求都跟 .md 一致。L2 Agent 的智能选后端工具直接加载这份，不靠 LLM 记忆背答案。",
   "version": "2026-07",
-  "source": "starter-kit/backend_capabilities.md",
+  "source": "starter_kit/backend_capabilities.md",
   "backends": [
     {
       "id": "spinq_taurus_simulator",

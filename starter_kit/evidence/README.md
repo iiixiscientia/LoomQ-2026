@@ -1,6 +1,6 @@
 # LoomQ 人工评分证据
 
-这份文件是人工评分材料的统一入口。请直接编辑它，只填写要申报的项目。截图、原始结果或图表统一放在 `starter-kit/evidence/files/`，也可以引用 `starter-kit/` 中已有的代码和文档。
+这份文件是人工评分材料的统一入口。请直接编辑它，只填写要申报的项目。截图、原始结果或图表统一放在 `starter_kit/evidence/files/`，也可以引用 `starter_kit/` 中已有的代码和文档。
 
 证据包是可选的。没有申报某项人工分时，留空即可，不影响自动评分。
 
@@ -27,8 +27,8 @@ token 认证都已就绪，但一直卡在平台侧 "under maintenance"，不是
 平台 job ID：G-260730-0005
 运行时间：2026-07-30 08:35:50 UTC
 shots：1000
-实际执行的 QASM：starter-kit/circuits/bell.qasm
-平台返回的原始结果：starter-kit/real_hardware/results/spinq_bell_gemini.json
+实际执行的 QASM：starter_kit/circuits/bell.qasm
+平台返回的原始结果：starter_kit/real_hardware/results/spinq_bell_gemini.json
 任务页截图：（暂无，可补）
 ```
 
@@ -51,8 +51,8 @@ evidence/files/spinq-screenshot.png
 
 ```text
 启动界面或 CLI 的命令：
-  Web 模式：cd starter-kit && python web_app.py
-  CLI 模式：cd starter-kit && python web_app.py --cli
+  Web 模式：cd starter_kit && python web_app.py
+  CLI 模式：cd starter_kit && python web_app.py --cli
 测试入口或页面地址：http://localhost:8765（启动后自动打开浏览器）
 适合现场体验的 3 个用户任务：
 1. 打开页面什么都不用输入，直接轻触第一幕的小球几次——观察它在蓝/橙之间”坍缩”，并读懂气泡里”叠加/测量”的解释；再进入第二幕轻触两颗球，观察它们总是同色，理解”纠缠”是什么。全程零文字输入，零 QASM 概念。
@@ -117,4 +117,4 @@ agent_chat。自由对话阶段 agent 返回的电路自动渲染测量结果柱
 - 外部视频可以用稳定只读链接，源码、原始结果和复现命令应保存在仓库中。
 - 整个 fork commit 的归档包不得超过 100 MiB。
 - 不要提交 API Key、Token、Cookie、个人身份信息或平台账户隐私。
-- 如申报 L1 真机分，在最终提交 Issue 的 `Hardware evidence` 中填写 `starter-kit/evidence/README.md`。
+- 如申报 L1 真机分，在最终提交 Issue 的 `Hardware evidence` 中填写 `starter_kit/evidence/README.md`。

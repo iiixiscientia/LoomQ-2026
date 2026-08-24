@@ -1,6 +1,6 @@
 # LoomQ 提交仓库（开发中）
 
-这是我们队伍自己的提交仓库草稿，基于 `../starter-kit`（v1.0.0）复制出的骨架构建。
+这是我们队伍自己的提交仓库草稿，基于 `../starter_kit`（v1.0.0）复制出的骨架构建。
 `../`（LoomQ-2026 官方发布包）保持原样不动，方便随时 `git pull` 拉官方更新；
 所有队伍自己的代码都在这个 `submission/` 目录里，将来单独 `git init` 成一个仓库提交。
 
@@ -120,7 +120,7 @@ python3 tests/agent_smoke_test.py           # 照题面三个判定用例自测
 标准库，不依赖网络/子进程，L2 的稳定性不会被 L1 某个后端的偶发问题拖累；
 无噪声精确分布，LLM 自验时不会被采样涨落干扰判断。
 
-后端选型的知识库是 `data/backend_capabilities.json`——starter-kit 只给了
+后端选型的知识库是 `data/backend_capabilities.json`——starter_kit 只给了
 `backend_capabilities.md` 表格没给机读版（可能是发布包漏了），这份是照着
 表格逐字转录的，直接嵌进 system prompt（`src/agent/system_prompt.py`），
 不靠模型背答案。

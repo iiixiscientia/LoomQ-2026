@@ -1,6 +1,6 @@
 """AWS Braket 后端执行封装（默认走免费本地模拟器，不需要 AWS 账号）。
 
-改写自官方 starter-kit/examples/run_braket.py，执行的是
+改写自官方 starter_kit/examples/run_braket.py，执行的是
 codegen.to_braket_qasm3(circuit, include_stdgates=False) 产出的文本——
 这个版本已经把 sdg/tdg/cu1/ccx 分解成 LocalSimulator 认识的内建门
 （h/x/s/t/rz/ry/cx→cnot/swap），12 个白名单门全部用

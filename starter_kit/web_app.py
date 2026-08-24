@@ -22,7 +22,7 @@ import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 
-# 确保能 import adapter（从 starter-kit/ 运行）
+# 确保能 import adapter（从 starter_kit/ 运行）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import adapter  # noqa: E402
 

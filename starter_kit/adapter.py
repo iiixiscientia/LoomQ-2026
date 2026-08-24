@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LoomQ submission adapter — 我自己的实现（基于 starter-kit 契约 v1.0）。
+"""LoomQ submission adapter — 我自己的实现（基于 starter_kit 契约 v1.0）。
 
 架构：QASM2 文本 -> src/qasm_parser.py 解析成 src/ir.py 的 Circuit
      -> src/codegen.py 按目标生成原生格式文本（这就是 transpile() 的返回值）

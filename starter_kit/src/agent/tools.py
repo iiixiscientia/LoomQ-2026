@@ -7,9 +7,9 @@
    协议，DeepSeek V4 系列支持标准 OpenAI 风格 function calling。
 2. **修正了一个真实 bug**：上一版 `find_backends` 用的后端字段是自己转录的
    （`account_required`/`cost: free_tier`/`kind: cloud_simulator_or_qpu`），
-   跟仓库里其实一直就有的官方 `starter-kit/backend_capabilities.json`
+   跟仓库里其实一直就有的官方 `starter_kit/backend_capabilities.json`
    （`requires_account`/`cost: free_quota`/`kind: cloud`）对不上——两份文件
-   长得像但字段名和枚举值不一样。旧版system prompt 的说法"starter-kit 官方
+   长得像但字段名和枚举值不一样。旧版system prompt 的说法"starter_kit 官方
    只给了 .md 没给机读版"是错的，json 从发布第一天就在，只是没人去核对内容
    一致性，自己又转录了一份不一致的。现在直接读官方那份，不再维护自己的
    副本，避免这类"两份数据长得像但不一致"的问题再犯。
@@ -34,7 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from src.qasm_parser import QasmParseError, parse_qasm2  # noqa: E402
 from src.reference_simulator import ideal_distribution  # noqa: E402
 
-# 官方权威数据，就在 starter-kit 根目录，不再自己维护一份副本。
+# 官方权威数据，就在 starter_kit 根目录，不再自己维护一份副本。
 _BACKEND_CAPS_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "backend_capabilities.json",

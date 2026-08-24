@@ -10,11 +10,11 @@ __pycache__/
 
 # 虚拟环境不进仓库
 venv/
-starter-kit/venv/
-starter-kit/spinq_env/
-starter-kit/spinq_runner.py
+starter_kit/venv/
+starter_kit/spinq_env/
+starter_kit/spinq_runner.py
 
 # 评测输出
 report.json
-starter-kit/report.json
+starter_kit/report.json
 .nfs.*
